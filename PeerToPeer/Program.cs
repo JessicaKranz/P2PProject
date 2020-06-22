@@ -13,7 +13,8 @@ namespace PeerToPeer
             Thread.CurrentThread.Name = "Main";
 
 
-            Task taskB = new Task(() => Connect("127.0.0.1", "I am Client B, Hi :)"));
+            Task taskB = new Task(() => Connect("127.0.0.1"));
+
             taskB.Start();
 
             BeTheServer();
@@ -22,7 +23,7 @@ namespace PeerToPeer
         }
 
 
-        static void Connect(String server, String message)
+        static void Connect(String server)
         {
             try
             {
@@ -34,34 +35,46 @@ namespace PeerToPeer
                 TcpClient client = new TcpClient(server, port);
 
                 // Translate the passed message into ASCII and store it as a Byte array.
-                Byte[] data = System.Text.Encoding.ASCII.GetBytes(message);
+                Byte[] data;
 
-                // Get a client stream for reading and writing.
-                //  Stream stream = client.GetStream();
+                while (true)
+                {
 
-                NetworkStream stream = client.GetStream();
+                    string line = Console.ReadLine();
 
-                // Send the message to the connected TcpServer.
-                stream.Write(data, 0, data.Length);
 
-                Console.WriteLine("Sent: {0}", message);
+                    data = System.Text.Encoding.ASCII.GetBytes(line);
 
-                // Receive the TcpServer.response.
 
-                // Buffer to store the response bytes.
-                data = new Byte[256];
+                    // Get a client stream for reading and writing.
+                    //  Stream stream = client.GetStream();
 
-                // String to store the response ASCII representation.
-                String responseData = String.Empty;
+                    NetworkStream stream = client.GetStream();
 
-                // Read the first batch of the TcpServer response bytes.
-                Int32 bytes = stream.Read(data, 0, data.Length);
-                responseData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
-                Console.WriteLine("Received: {0}", responseData);
+                    // Send the message to the connected TcpServer.
+                    stream.Write(data, 0, data.Length);
 
-                // Close everything.
-                stream.Close();
-                client.Close();
+                    //Console.WriteLine("Sent: {0}", line);
+
+                    // Receive the TcpServer.response.
+
+                    // Buffer to store the response bytes.
+                    data = new Byte[256];
+
+                    // String to store the response ASCII representation.
+                    String responseData = String.Empty;
+
+                    // Read the first batch of the TcpServer response bytes.
+                    Int32 bytes = stream.Read(data, 0, data.Length);
+                    responseData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
+                    Console.WriteLine("Received: {0}", responseData);
+
+                    // Close everything.
+                    //stream.Close();
+                    //client.Close();
+                }
+
+
             }
             catch (ArgumentNullException e)
             {
@@ -128,7 +141,7 @@ namespace PeerToPeer
 
                         // Send back a response.
                         stream.Write(msg, 0, msg.Length);
-                        Console.WriteLine("Sent: {0}", data);
+                        //Console.WriteLine("Sent: {0}", data);
                     }
 
                     // Shutdown and end connection

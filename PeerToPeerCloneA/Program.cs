@@ -12,18 +12,22 @@ namespace PeerToPeerCloneA
         {
             Thread.CurrentThread.Name = "Main";
 
+            Task taskB;
+            while (true)
+            {
+                taskB = new Task(() => Connect("127.0.0.1"));
 
-            Task taskA = new Task(() => Connect("127.0.0.1", "I am Client A, Hi :)"));
-            taskA.Start();
+                taskB.Start();
+
+                BeTheServer();
 
 
-            BeTheServer();
-
-            taskA.Wait();
+            }
+            taskB.Wait();
         }
 
 
-        static void Connect(String server, String message)
+        static void Connect(String server)
         {
             try
             {
@@ -35,34 +39,40 @@ namespace PeerToPeerCloneA
                 TcpClient client = new TcpClient(server, port);
 
                 // Translate the passed message into ASCII and store it as a Byte array.
-                Byte[] data = System.Text.Encoding.ASCII.GetBytes(message);
+                Byte[] data;
 
-                // Get a client stream for reading and writing.
-                //  Stream stream = client.GetStream();
+                while (true)
+                {
+                    string line = Console.ReadLine();
+                    data = System.Text.Encoding.ASCII.GetBytes(line);
 
-                NetworkStream stream = client.GetStream();
+                    // Get a client stream for reading and writing.
+                    //  Stream stream = client.GetStream();
 
-                // Send the message to the connected TcpServer.
-                stream.Write(data, 0, data.Length);
+                    NetworkStream stream = client.GetStream();
 
-                Console.WriteLine("Sent: {0}", message);
+                    // Send the message to the connected TcpServer.
+                    stream.Write(data, 0, data.Length);
 
-                // Receive the TcpServer.response.
+                    //Console.WriteLine("Sent: {0}", line);
 
-                // Buffer to store the response bytes.
-                data = new Byte[256];
+                    // Receive the TcpServer.response.
 
-                // String to store the response ASCII representation.
-                String responseData = String.Empty;
+                    // Buffer to store the response bytes.
+                    data = new Byte[256];
 
-                // Read the first batch of the TcpServer response bytes.
-                Int32 bytes = stream.Read(data, 0, data.Length);
-                responseData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
-                Console.WriteLine("Received: {0}", responseData);
+                    // String to store the response ASCII representation.
+                    String responseData = String.Empty;
 
-                // Close everything.
-                stream.Close();
-                client.Close();
+                    // Read the first batch of the TcpServer response bytes.
+                    Int32 bytes = stream.Read(data, 0, data.Length);
+                    responseData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
+                    Console.WriteLine("Received: {0}", responseData);
+
+                    // Close everything.
+                    //stream.Close();
+                    //client.Close();
+                }
             }
             catch (ArgumentNullException e)
             {
@@ -129,7 +139,7 @@ namespace PeerToPeerCloneA
 
                         // Send back a response.
                         stream.Write(msg, 0, msg.Length);
-                        Console.WriteLine("Sent: {0}", data);
+                        //Console.WriteLine("Sent: {0}", data);
                     }
 
                     // Shutdown and end connection
