@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Datenmodelle;
+using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -21,7 +22,25 @@ namespace PeerToPeerCloneA
         static bool go_on = true;
         static void Main(string[] args)
         {
-            Thread.CurrentThread.Name = "Main";
+            /*Nachrichtentest Testblock: */ 
+            {
+                /*
+
+                    string test = "tt000911112222333344442222333344441111 [13:00:22] This is the PlaintextMessage. Why am I even sending this.";
+                    Nachricht nachricht = new Nachricht(test);
+                    Console.WriteLine("-------------Nachricht Test Block Anfang-------------");
+                    Console.WriteLine("Ursprungsnachricht: " + test);
+                    Console.WriteLine("Nachricht MessageClass: " + new string (nachricht.getMessageClass()));
+                    Console.WriteLine("Nachricht TTL         : " + new string (nachricht.getTTL()));
+                    Console.WriteLine("Nachricht Destination : " + new string (nachricht.getDestinationID()));
+                    Console.WriteLine("Nachricht Origin      : " + new string (nachricht.getOriginID()));
+                    Console.WriteLine("Nachricht Plaintext   : " + new string (nachricht.getMessageText()));
+                    Console.WriteLine("Ursprungsnachricht: " + nachricht.getOriginalMessage());
+                    Console.WriteLine("-------------Nachricht Test Block Ende-------------");
+                */
+            }
+
+        Thread.CurrentThread.Name = "Main";
             Thread t = new Thread(new ThreadStart(ThreadProc1));
 
             t.Start();
@@ -189,5 +208,20 @@ namespace PeerToPeerCloneA
             Console.Read();
         }
 
+        //const char[] peerEntry = { '0', '0' }; //<- This doesnt work :(
+        const string peerEntry = "00"; //<- So dirty it is (not even quicker)
+
+        /*Hier passiert die Logic eines Peers. Hier steht was er bei welchem Nachrichtentyp Macht etc*/
+        static void ProzessNachricht(Nachricht n)
+        {
+            switch (new string (n.GetMessageClass())) //This seems dirty aswell
+            {
+                case peerEntry:
+                    //TODO dostuff()
+                    break;
+            }
+
+                
+        }
     }
 }
