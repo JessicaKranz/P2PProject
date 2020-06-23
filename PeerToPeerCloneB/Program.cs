@@ -8,48 +8,24 @@ namespace PeerToPeerCloneA
 {
     class Program
     {
-        public static void ThreadProc1()
-        {
-            BeTheServer(13000);
-        }
-
-        public static void ThreadProc2()
-        {
-            BeTheServer(13003);
-        }
-
         static bool go_on = true;
         static void Main(string[] args)
         {
             Thread.CurrentThread.Name = "Main";
-            Thread t = new Thread(new ThreadStart(ThreadProc1));
 
-            t.Start();
-
-            Thread t1 = new Thread(new ThreadStart(ThreadProc2));
-            t1.Start();
-
-
-            //t.Join();
-
-
-            Task taskConnect1;
-            Task taskConnect2;
-
-
+            Task taskB;
             while (true)
             {
-                taskConnect1 = new Task(() => Connect("127.0.0.1", 13001));
-                taskConnect1.Start();
+                //connect to A
+                taskB = new Task(() => Connect("127.0.0.1", 13000));
 
-                taskConnect2 = new Task(() => Connect("127.0.0.1", 13002));
-                taskConnect2.Start();
+                taskB.Start();
+
+                BeTheServer(13001);
+
 
             }
-
-            taskConnect1.Wait();
-            taskConnect2.Wait();
-
+            taskB.Wait();
         }
 
 
@@ -61,7 +37,6 @@ namespace PeerToPeerCloneA
                 // Note, for this client to work you need to have a TcpServer
                 // connected to the same address as specified by the server, port
                 // combination.
-              
                 TcpClient client = new TcpClient(server, port);
 
                 // Translate the passed message into ASCII and store it as a Byte array.
@@ -124,7 +99,7 @@ namespace PeerToPeerCloneA
         {
             TcpListener server = null;
             try
-            {            
+            {
                 IPAddress localAddr = IPAddress.Parse("127.0.0.1");
 
                 // TcpListener server = new TcpListener(port);

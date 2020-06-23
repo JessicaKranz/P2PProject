@@ -8,22 +8,23 @@ namespace PeerToPeer
 {
     class Program
     {
+        static bool go_on = true;
         static void Main(string[] args)
         {
             Thread.CurrentThread.Name = "Main";
 
 
-            Task taskB = new Task(() => Connect("127.0.0.1"));
+            Task taskB = new Task(() => Connect("127.0.0.1", 13003));
 
             taskB.Start();
 
-            BeTheServer();
+            BeTheServer(13002);
 
             taskB.Wait();
         }
 
 
-        static void Connect(String server)
+        static void Connect(String server, Int32 port)
         {
             try
             {
@@ -31,13 +32,12 @@ namespace PeerToPeer
                 // Note, for this client to work you need to have a TcpServer
                 // connected to the same address as specified by the server, port
                 // combination.
-                Int32 port = 13000;
                 TcpClient client = new TcpClient(server, port);
 
                 // Translate the passed message into ASCII and store it as a Byte array.
                 Byte[] data;
 
-                while (true)
+                while (go_on)
                 {
 
                     string line = Console.ReadLine();
@@ -69,9 +69,13 @@ namespace PeerToPeer
                     responseData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
                     Console.WriteLine("Received: {0}", responseData);
 
-                    // Close everything.
-                    //stream.Close();
-                    //client.Close();
+                    if (line.Equals("quit"))
+                    {
+                        go_on = false;
+                        // Close everything.
+                        stream.Close();
+                        client.Close();
+                    }
                 }
 
 
@@ -85,19 +89,17 @@ namespace PeerToPeer
                 Console.WriteLine("SocketException: {0}", e);
             }
 
-            Console.WriteLine("\n Press Enter to continue...");
+            Console.WriteLine("\n Disconnected");
             Console.Read();
         }
 
 
 
-        static void BeTheServer()
+        static void BeTheServer(Int32 port)
         {
             TcpListener server = null;
             try
             {
-                // Set the TcpListener on port 13000.
-                Int32 port = 13001;
                 IPAddress localAddr = IPAddress.Parse("127.0.0.1");
 
                 // TcpListener server = new TcpListener(port);
