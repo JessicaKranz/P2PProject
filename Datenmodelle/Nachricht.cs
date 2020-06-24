@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Xml.Schema;
 
 namespace Datenmodelle
@@ -19,28 +20,28 @@ namespace Datenmodelle
 
         //Alle folgenden Char Arrays sind zu lesen als ASCII Schlüssel, die durch den Jeweiligen Peer interpretiert werden. 
         //Jeder Peer hat das selbe verständnis der Schlüssel
-        private char[] MessageClass = new char[FeldGroesseMessageClass];        /* Was für eine Nachricht wird da Geschickt?*/
-        private char[] TTL = new char[FeldGroesseTTL];                          /* Welche TTL hat die Nachricht [Bestimmte MessageClasses brauchen keine TTL -> dann ist sie ohne Konsequenzen ]*/
-        private char[] DestinationID = new char[FeldGroesseDestinationID];      /* Gibt es eine Destination in Form eines Gruppenchats/einzelnen Peers, dann steht sie hier*/
-        private char[] OriginID = new char[FeldGroesseOriginID];                /* Derjenige Peer, der die Nachricht ursprünglich losgeschickt hat [IDEE: man könnt hier auch eine Liste/Stack mitschicken mit dem letzen Absender immer hinten drann/oben drauf */
-        //char[] OriginPort     = new char[5];
-        private string MessageText;                                             /* Falls es eine Nachricht gibt, steht sie hier */
-        private string OriginalMessage;                                         /* Aus Debug Gründen, und weils nicht weh tut. Hier die Ganze Nachricht im Plaintext*/
+        private string MessageClass     = string.Empty;        /* Was für eine Nachricht wird da Geschickt?*/
+        private string TTL              = string.Empty;                 /* Welche TTL hat die Nachricht [Bestimmte MessageClasses brauchen keine TTL -> dann ist sie ohne Konsequenzen ]*/
+        private string DestinationID    = string.Empty;       /* Gibt es eine Destination in Form eines Gruppenchats/einzelnen Peers, dann steht sie hier*/
+        private string OriginID         = string.Empty;            /* Derjenige Peer, der die Nachricht ursprünglich losgeschickt hat [IDEE: man könnt hier auch eine Liste/Stack mitschicken mit dem letzen Absender immer hinten drann/oben drauf */
+        //string OriginPort     = new char[5];
+        private string MessageText;         /* Falls es eine Nachricht gibt, steht sie hier */
+        private string OriginalMessage;     /* Aus Debug Gründen, und weils nicht weh tut. Hier die Ganze Nachricht im Plaintext*/
 
         /*Variablen Getter*/
-        public char[] GetMessageClass()
+        public string GetMessageClass()
         {
             return MessageClass;
         }
-        public char[] GetTTL()
+        public string GetTTL()
         {
             return TTL;
         }
-        public char[] GetDestinationID()
+        public string GetDestinationID()
         {
             return DestinationID;
         }
-        public char[] GetOriginID()
+        public string GetOriginID()
         {
             return OriginID;
         }
@@ -58,27 +59,11 @@ namespace Datenmodelle
         {
             OriginalMessage = message;
 
-            for (int i = 0; i < FeldGroesseMessageClass; i++)
-            {
-                MessageClass[i] = message[i + StartIndexMessageClass];
-            }
-
-            for (int i = 0; i < FeldGroesseTTL; i++)
-            {
-                TTL[i] = message[i + StartIndexTTL];
-            }
-
-            for (int i = 0; i < FeldGroesseDestinationID; i++)
-            {
-                DestinationID[i] = message[i + StartIndexDestinationID];
-            }
-
-            for (int i = 0; i < FeldGroesseOriginID; i++)
-            {
-                OriginID[i] = message[i + StartIndexOriginID];
-            }
-
-            MessageText = message.Substring(StartIndexMessageText);
+            MessageClass    = message.Substring(StartIndexMessageClass , StartIndexMessageClass    + FeldGroesseMessageClass    );
+            TTL             = message.Substring(StartIndexTTL          , StartIndexTTL             + FeldGroesseTTL             );
+            DestinationID   = message.Substring(StartIndexDestinationID, StartIndexDestinationID   + FeldGroesseDestinationID   );
+            OriginID        = message.Substring(StartIndexOriginID     , StartIndexOriginID        + FeldGroesseOriginID        );
+            MessageText     = message.Substring(StartIndexMessageText);
         }
         
 
