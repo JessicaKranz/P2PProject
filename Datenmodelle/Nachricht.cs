@@ -21,7 +21,7 @@ namespace Datenmodelle
         //Alle folgenden Char Arrays sind zu lesen als ASCII Schlüssel, die durch den Jeweiligen Peer interpretiert werden. 
         //Jeder Peer hat das selbe verständnis der Schlüssel
         private string MessageClass     = string.Empty;        /* Was für eine Nachricht wird da Geschickt?*/
-        private string TTL              = string.Empty;                 /* Welche TTL hat die Nachricht [Bestimmte MessageClasses brauchen keine TTL -> dann ist sie ohne Konsequenzen ]*/
+        private string TTL              = string.Empty;                 /* Welche TTL hat die Nachricht [Bestimmte MessageClasses brauchen keine TTL -> dann ist sie entweder ohne Konsequenzen, oder wird anders benutzes (z.B. EntryPeer EP und JoinPeer JP) ]*/
         private string DestinationID    = string.Empty;       /* Gibt es eine Destination in Form eines Gruppenchats/einzelnen Peers, dann steht sie hier*/
         private string OriginID         = string.Empty;            /* Derjenige Peer, der die Nachricht ursprünglich losgeschickt hat [IDEE: man könnt hier auch eine Liste/Stack mitschicken mit dem letzen Absender immer hinten drann/oben drauf */
         //string OriginPort     = new char[5];
@@ -59,10 +59,10 @@ namespace Datenmodelle
         {
             OriginalMessage = message;
 
-            MessageClass    = message.Substring(StartIndexMessageClass , StartIndexMessageClass    + FeldGroesseMessageClass    );
-            TTL             = message.Substring(StartIndexTTL          , StartIndexTTL             + FeldGroesseTTL             );
-            DestinationID   = message.Substring(StartIndexDestinationID, StartIndexDestinationID   + FeldGroesseDestinationID   );
-            OriginID        = message.Substring(StartIndexOriginID     , StartIndexOriginID        + FeldGroesseOriginID        );
+            MessageClass    = message.Substring(StartIndexMessageClass , FeldGroesseMessageClass    );
+            TTL             = message.Substring(StartIndexTTL          , FeldGroesseTTL             );
+            DestinationID   = message.Substring(StartIndexDestinationID, FeldGroesseDestinationID   );
+            OriginID        = message.Substring(StartIndexOriginID     , FeldGroesseOriginID        );
             MessageText     = message.Substring(StartIndexMessageText);
         }
         
