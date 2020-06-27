@@ -24,27 +24,27 @@ namespace Datenmodelle
 
 
 
-        public string Type { get; private set; }
+        public string Type { get; set; }
         /// <summary>
         /// EntryPeer and JoinPeer use TTLs differently
         /// </summary>
-        public string Ttl { get; private set; }               
+        public string Ttl { get; set; }               
         /// <summary>
         /// target ID
         /// </summary>
-        public string DestinationId { get; private set; }  
+        public string DestinationId { get; set; }  
         /// <summary>
         /// senders ID
         /// </summary>
-        public string SourceId { get; private set; }          
+        public string SourceId { get; set; }          
         /// <summary>
         /// senders name
         /// </summary>
-        public string AuthorName { get; private set; }
+        public string AuthorName { get; set; }
         /// <summary>
         /// messages payload
         /// </summary>
-        public string PlainText { get; private set; }
+        public string PlainText { get; set; }
         
 
         
@@ -73,6 +73,7 @@ namespace Datenmodelle
             }
         }
     
+        public Message(){}
 
 
         public Message(string message)
@@ -99,46 +100,5 @@ namespace Datenmodelle
 
             PlainText     = message.Substring(StartIndexMessageText);
         }
-
-        public Message(string MessageClass, string TTL, string DestinationID, string OriginID, string authorName, string MessageText)
-        {
-            if (MessageClass.Length != FeldGroesseMessageClass)
-            {
-                throw new System.ArgumentException("MessageClass must be a string of length " +FeldGroesseMessageClass +".");
-            }
-            this.Type = MessageClass;
-
-            if (TTL.Length != FeldGroesseTTL)
-            {
-                throw new System.ArgumentException("TTL must be a string of length " + FeldGroesseTTL + ".");
-            }
-            this.Ttl = TTL;
-
-            if (DestinationID.Length != FeldGroesseDestinationID)
-            {
-                throw new System.ArgumentException("DestinationID must be a string of length " + FeldGroesseDestinationID + ".");
-            }
-            this.DestinationId = DestinationID;
-
-            if (OriginID.Length != FeldGroesseOriginID)
-            {
-                throw new System.ArgumentException("OriginID must be a string of length " + FeldGroesseOriginID + ".");
-            }
-            this.SourceId = OriginID;
-            AuthorNameLength = authorName.Length;
-            StartIndexMessageText = AuthorNameLength + FeldGroesseNameLength;
-            string AuthorNameLengthString = this.GetAuthorNameLength();
-            if (AuthorNameLength > 0)
-            {
-                this.AuthorName = authorName;
-            }
-            else
-            {
-                this.AuthorName = OriginID;
-                AuthorNameLength = 8;
-                AuthorNameLengthString = this.GetAuthorNameLength();
-            }
-            this.PlainText = MessageText;           
-        }     
     }
 }
