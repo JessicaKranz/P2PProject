@@ -5,9 +5,8 @@ using System.Xml.Schema;
 
 namespace Datenmodelle
 {
-    public class Nachricht
+    public class Message
     {
-
         const int FeldGroesseMessageClass   =   2;
         const int FeldGroesseTTL            =   4;
         const int FeldGroesseDestinationID  =   8;
@@ -24,34 +23,32 @@ namespace Datenmodelle
         private int StartIndexMessageText ;
 
 
-        //Alle folgenden Char Arrays sind zu lesen als ASCII Schlüssel, die durch den Jeweiligen Peer interpretiert werden. 
-        //Jeder Peer hat das selbe verständnis der Schlüssel
-        private string MessageClass;        /* Was für eine Nachricht wird da Geschickt?*/
-        private string TTL;                 /* Welche TTL hat die Nachricht [Bestimmte MessageClasses brauchen keine TTL -> dann ist sie entweder ohne Konsequenzen, oder wird anders benutzes (z.B. EntryPeer EP und JoinPeer JP) ]*/
-        private string DestinationID;       /* Gibt es eine Destination in Form eines Gruppenchats/einzelnen Peers, dann steht sie hier*/
-        private string OriginID;            /* Derjenige Peer, der die Nachricht ursprünglich losgeschickt hat [IDEE: man könnt hier auch eine Liste/Stack mitschicken mit dem letzen Absender immer hinten drann/oben drauf */
-        //string OriginPort     = new char[5];
-        private string AuthorName;              /* Gibt den Author der Nachricht mit Namen zurück */
-        private string MessageText;         /* Falls es eine Nachricht gibt, steht sie hier */
-        private string OriginalMessage;     /* Aus Debug Gründen, und weils nicht weh tut. Hier die Ganze Nachricht im Plaintext*/
 
-        /*Variablen Getter*/
-        public string GetMessageClass()
-        {
-            return MessageClass;
-        }
-        public string GetTTL()
-        {
-            return TTL;
-        }
-        public string GetDestinationID()
-        {
-            return DestinationID;
-        }
-        public string GetOriginID()
-        {
-            return OriginID;
-        }
+        public string Type { get; private set; }
+        /// <summary>
+        /// EntryPeer and JoinPeer use TTLs differently
+        /// </summary>
+        public string Ttl { get; private set; }               
+        /// <summary>
+        /// target ID
+        /// </summary>
+        public string DestinationId { get; private set; }  
+        /// <summary>
+        /// senders ID
+        /// </summary>
+        public string SourceId { get; private set; }          
+        /// <summary>
+        /// senders name
+        /// </summary>
+        public string AuthorName { get; private set; }
+        /// <summary>
+        /// messages payload
+        /// </summary>
+        public string PlainText { get; private set; }
+        
+
+        
+      
         public string GetAuthorNameLength()
         {
             if (AuthorNameLength > (int)Math.Pow(10, FeldGroesseNameLength) - 1)
@@ -75,33 +72,15 @@ namespace Datenmodelle
                 return "000";
             }
         }
-        public int GetAuthorNameLengthInt()
-        {
-            return AuthorNameLength;
-        }
-        public string GetAuthorName()
-        {
-            return AuthorName;
-        }
-        public string GetMessageText()
-        {
-            return MessageText;
-        }
-        public string GetOriginalMessage()
-        {
-            return OriginalMessage;
-        }
-        /*Variablen Getter Ende*/
+    
 
 
-        public Nachricht(string message)
-        {
-            OriginalMessage = message;
-
-            MessageClass    = message.Substring(StartIndexMessageClass , FeldGroesseMessageClass    );
-            TTL             = message.Substring(StartIndexTTL          , FeldGroesseTTL             );
-            DestinationID   = message.Substring(StartIndexDestinationID, FeldGroesseDestinationID   );
-            OriginID        = message.Substring(StartIndexOriginID     , FeldGroesseOriginID        );
+        public Message(string message)
+        {         
+            Type            = message.Substring(StartIndexMessageClass , FeldGroesseMessageClass    );
+            Ttl             = message.Substring(StartIndexTTL          , FeldGroesseTTL             );
+            DestinationId   = message.Substring(StartIndexDestinationID, FeldGroesseDestinationID   );
+            SourceId        = message.Substring(StartIndexOriginID     , FeldGroesseOriginID        );
             for (int i = 0; i < FeldGroesseNameLength; i++)
             {
                 AuthorNameLength = AuthorNameLength + int.Parse(message.Substring(StartIndexNameLength + i, 1))*(int)Math.Pow(10,FeldGroesseNameLength-1-i);
@@ -113,39 +92,39 @@ namespace Datenmodelle
             }
             else
             {
-                AuthorName = OriginID;
+                AuthorName = SourceId;
                 AuthorNameLength = 8;
             }
             StartIndexMessageText = StartIndexNameLength + FeldGroesseNameLength + AuthorNameLength;
 
-            MessageText     = message.Substring(StartIndexMessageText);
+            PlainText     = message.Substring(StartIndexMessageText);
         }
 
-        public Nachricht(string MessageClass, string TTL, string DestinationID, string OriginID, string authorName, string MessageText)
+        public Message(string MessageClass, string TTL, string DestinationID, string OriginID, string authorName, string MessageText)
         {
             if (MessageClass.Length != FeldGroesseMessageClass)
             {
                 throw new System.ArgumentException("MessageClass must be a string of length " +FeldGroesseMessageClass +".");
             }
-            this.MessageClass = MessageClass;
+            this.Type = MessageClass;
 
             if (TTL.Length != FeldGroesseTTL)
             {
                 throw new System.ArgumentException("TTL must be a string of length " + FeldGroesseTTL + ".");
             }
-            this.TTL = TTL;
+            this.Ttl = TTL;
 
             if (DestinationID.Length != FeldGroesseDestinationID)
             {
                 throw new System.ArgumentException("DestinationID must be a string of length " + FeldGroesseDestinationID + ".");
             }
-            this.DestinationID = DestinationID;
+            this.DestinationId = DestinationID;
 
             if (OriginID.Length != FeldGroesseOriginID)
             {
                 throw new System.ArgumentException("OriginID must be a string of length " + FeldGroesseOriginID + ".");
             }
-            this.OriginID = OriginID;
+            this.SourceId = OriginID;
             AuthorNameLength = authorName.Length;
             StartIndexMessageText = AuthorNameLength + FeldGroesseNameLength;
             string AuthorNameLengthString = this.GetAuthorNameLength();
@@ -159,11 +138,7 @@ namespace Datenmodelle
                 AuthorNameLength = 8;
                 AuthorNameLengthString = this.GetAuthorNameLength();
             }
-            this.MessageText = MessageText;
-            this.OriginalMessage = MessageClass + TTL + DestinationID + OriginID + AuthorNameLengthString+ AuthorName+ MessageText;
-        }
-
-        
-
+            this.PlainText = MessageText;           
+        }     
     }
 }

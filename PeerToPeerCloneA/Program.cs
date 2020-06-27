@@ -39,16 +39,15 @@ namespace PeerToPeerCloneA
             {
                 
                 string test = "tt00091122334422334411123ThisNameIsCrazyLongWhyAmIEvenConsideringSuchALongNameThisISGonnaFlyUmMy arsAtSomePointMaybeIshouldtdreiundzwahnzigzeichen [13:00:22] This is the PlaintextMessage. Why am I even sending this.";
-                Nachricht nachricht = new Nachricht(test);
+                Message nachricht = new Message(test);
                 Console.WriteLine("-------------Nachricht Test Block Anfang-------------");
-                Console.WriteLine("Nachricht MessageClass: " + nachricht.GetMessageClass());
-                Console.WriteLine("Nachricht TTL         : " + nachricht.GetTTL());
-                Console.WriteLine("Nachricht Destination : " + nachricht.GetDestinationID());
-                Console.WriteLine("Nachricht Origin      : " + nachricht.GetOriginID());
+                Console.WriteLine("Nachricht MessageClass: " + nachricht.Type);
+                Console.WriteLine("Nachricht TTL         : " + nachricht.Ttl);
+                Console.WriteLine("Nachricht Destination : " + nachricht.DestinationId);
+                Console.WriteLine("Nachricht Origin      : " + nachricht.SourceId);
                 Console.WriteLine("Laenge des Authornamen: " + nachricht.GetAuthorNameLength());
-                Console.WriteLine("Author der Nachricht  : " + nachricht.GetAuthorName());
-                Console.WriteLine("Nachricht Plaintext   : " + nachricht.GetMessageText());
-                Console.WriteLine("Ursprungsnachricht: " + nachricht.GetOriginalMessage());
+                Console.WriteLine("Author der Nachricht  : " + nachricht.AuthorName);
+                Console.WriteLine("Nachricht Plaintext   : " + nachricht.PlainText);
                 
                 ProzessNachricht(nachricht);
                 Console.WriteLine("-------------Nachricht Test Block Ende-------------");
@@ -57,31 +56,29 @@ namespace PeerToPeerCloneA
                 
                 string test1 = "PE9998" + rand.Next(1 * (int)Math.Pow(10, 7), 1 * (int)Math.Pow(10, 8) - 1) + rand.Next(1 * (int)Math.Pow(10, 7), 1 * (int)Math.Pow(10, 8) - 1) + "000192.168.178.55";
                 string test2 = "PE9994" + rand.Next(1 * (int)Math.Pow(10, 7), 1 * (int)Math.Pow(10, 8) - 1) + rand.Next(1 * (int)Math.Pow(10, 7), 1 * (int)Math.Pow(10, 8) - 1) + "008Thorsten10.8.0.8";
-                nachricht = new Nachricht(test1);
+                nachricht = new Message(test1);
                 Console.WriteLine("-------------Nachricht Test Block Anfang-------------");
-                Console.WriteLine("Nachricht MessageClass: " + nachricht.GetMessageClass());
-                Console.WriteLine("Nachricht TTL         : " + nachricht.GetTTL());
-                Console.WriteLine("Nachricht Destination : " + nachricht.GetDestinationID());
-                Console.WriteLine("Nachricht Origin      : " + nachricht.GetOriginID());
+                Console.WriteLine("Nachricht MessageClass: " + nachricht.Type);
+                Console.WriteLine("Nachricht TTL         : " + nachricht.Ttl);
+                Console.WriteLine("Nachricht Destination : " + nachricht.DestinationId);
+                Console.WriteLine("Nachricht Origin      : " + nachricht.SourceId);
                 Console.WriteLine("Laenge des Authornamen: " + nachricht.GetAuthorNameLength());
-                Console.WriteLine("Author der Nachricht  : " + nachricht.GetAuthorName());
-                Console.WriteLine("Nachricht Plaintext   : " + nachricht.GetMessageText());
-                Console.WriteLine("Ursprungsnachricht: " + nachricht.GetOriginalMessage());
+                Console.WriteLine("Author der Nachricht  : " + nachricht.AuthorName);
+                Console.WriteLine("Nachricht Plaintext   : " + nachricht.PlainText);
                 ProzessNachricht(nachricht);
                 Console.WriteLine("-------------Nachricht Test Block Ende-------------");
 
                 Console.WriteLine("");
                 Console.WriteLine("Ab hier neue Nachricht");
-                nachricht = new Nachricht(test2);
+                nachricht = new Message(test2);
                 Console.WriteLine("-------------Nachricht Test Block Anfang-------------");
-                Console.WriteLine("Nachricht MessageClass: " + nachricht.GetMessageClass());
-                Console.WriteLine("Nachricht TTL         : " + nachricht.GetTTL());
-                Console.WriteLine("Nachricht Destination : " + nachricht.GetDestinationID());
-                Console.WriteLine("Nachricht Origin      : " + nachricht.GetOriginID());
+                Console.WriteLine("Nachricht MessageClass: " + nachricht.Type);
+                Console.WriteLine("Nachricht TTL         : " + nachricht.Ttl);
+                Console.WriteLine("Nachricht Destination : " + nachricht.DestinationId);
+                Console.WriteLine("Nachricht Origin      : " + nachricht.SourceId);
                 Console.WriteLine("Laenge des Authornamen: " + nachricht.GetAuthorNameLength());
-                Console.WriteLine("Author der Nachricht  : " + nachricht.GetAuthorName());
-                Console.WriteLine("Nachricht Plaintext   : " + nachricht.GetMessageText());
-                Console.WriteLine("Ursprungsnachricht: " + nachricht.GetOriginalMessage());
+                Console.WriteLine("Author der Nachricht  : " + nachricht.AuthorName);
+                Console.WriteLine("Nachricht Plaintext   : " + nachricht.PlainText);
                 Console.WriteLine("");
                 ProzessNachricht(nachricht);
                 Console.WriteLine("-------------Nachricht Test Block Ende-------------");
@@ -268,10 +265,10 @@ namespace PeerToPeerCloneA
         //const string 
 
         /*Hier passiert die Logic eines Peers. Hier steht was er bei welchem Nachrichtentyp Macht etc*/
-        private static void ProzessNachricht(Nachricht n)
+        private static void ProzessNachricht(Message n)
         {
 
-            switch (n.GetMessageClass()) 
+            switch (n.Type) 
             {
                 case PeerEntry:
                     try
@@ -307,33 +304,33 @@ namespace PeerToPeerCloneA
                     break;
             }               
         }
-        static void PeerEntryMethod(Nachricht n)
+        static void PeerEntryMethod(Message n)
         {
-            if(n.GetTTL().Substring(0,3) != "999")
+            if(n.Ttl.Substring(0,3) != "999")
             {
                 throw new System.ArgumentException(" Have received Invalid Message with: Peer Entry request but with TTL != 999x ");
             }
-            int wishedNeighbours = Int32.Parse(n.GetTTL().Substring(3,1)); //vierte stelle der TTL
+            int wishedNeighbours = Int32.Parse(n.Ttl.Substring(3,1)); //vierte stelle der TTL
             if (WillIBecomeANewNeighbour())
             {
                 wishedNeighbours--;
-                string ipAdresse = n.GetMessageText();
+                string ipAdresse = n.PlainText;
                 ConnectTCP(ipAdresse);
             }
             if (wishedNeighbours > 0)
             {
-                Nachricht pjNachricht = new Nachricht("PJ", "000" + wishedNeighbours, n.GetDestinationID(), n.GetOriginID(),n.GetAuthorName(),n.GetMessageText());
+                Message pjNachricht = new Message("PJ", "000" + wishedNeighbours, n.DestinationId, n.SourceId,n.AuthorName,n.PlainText);
                 SendPJMessage(pjNachricht);
             }
         }
 
-        static void PeerJoinMethod(Nachricht n)
+        static void PeerJoinMethod(Message n)
         {
-            if (n.GetTTL().Substring(0, 3) != "000")
+            if (n.Ttl.Substring(0, 3) != "000")
             {
                 throw new System.ArgumentException(" Have received Invalid Message with: Peer Join propagation request but with TTL != 000x ");
             }
-            int wishedNeighbours = Int32.Parse(n.GetTTL().Substring(3, 1)); //vierte stelle der TTL gibt die Wunschzahl der Nachbarn an
+            int wishedNeighbours = Int32.Parse(n.Ttl.Substring(3, 1)); //vierte stelle der TTL gibt die Wunschzahl der Nachbarn an
 
             if (!neighbours.Contains(/*Wo Connection.parterPeer.GetPeerID() = n.OriginID*/new Connection("dummy")))//DO I KNOW THIS PEER ALREADY? Schaue in der Neighbours Liste nach 
             {
@@ -341,19 +338,19 @@ namespace PeerToPeerCloneA
                 if (WillIBecomeANewNeighbour())
                 {
                     wishedNeighbours--;
-                    string ipAdresse = n.GetMessageText();
+                    string ipAdresse = n.PlainText;
                     ConnectTCP(ipAdresse);
                 }
             }
             
             if (wishedNeighbours > 0)
             {
-                Nachricht pjNachricht = new Nachricht("PJ", "000" + wishedNeighbours, n.GetDestinationID(), n.GetOriginID(),n.GetAuthorName(), n.GetMessageText());
+                Message pjNachricht = new Message("PJ", "000" + wishedNeighbours, n.DestinationId, n.SourceId, n.AuthorName, n.PlainText);
                 SendPJMessage(pjNachricht);
             }
         }
 
-        private static void SendPJMessage(Nachricht pjMessage)
+        private static void SendPJMessage(Message pjMessage)
         {
             //TODO Send PJ MEssage over Overlay
         }
