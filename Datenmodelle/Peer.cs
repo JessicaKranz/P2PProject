@@ -6,13 +6,13 @@ namespace Datenmodelle
 {
     public class Peer
     {
-        string peerID; 
+        int peerID; 
         string associatedName;
         DateTime lastSeen;
 
-        public Peer(string peerID, string associatedName)
+        public Peer(int peerID, string associatedName)
         {
-            if(int.Parse(peerID)< Math.Pow(10, 7)||int.Parse(peerID)> (int)Math.Pow(10, 8) - 1)
+            if(peerID < (int) Math.Pow(10, 7)|| peerID > (int)Math.Pow(10, 8) - 1)
             {
                 throw new System.ArgumentOutOfRangeException("peerID was out of Range. Please check creation of peerID.");
             }
@@ -22,18 +22,18 @@ namespace Datenmodelle
             UpdateLastSeen();     
         }
 
-        public Peer(string peerID)
+        public Peer(int peerID)
         {
-            if (int.Parse(peerID) < Math.Pow(10, 7) || int.Parse(peerID) > (int)Math.Pow(10, 8) - 1)
+            if (peerID < (int)Math.Pow(10, 7) || peerID > (int)Math.Pow(10, 8) - 1)
             {
                 throw new System.ArgumentOutOfRangeException("peerID was out of Range. Please check creation of peerID.");
             }
 
             this.peerID = peerID;
-            this.associatedName = peerID;
+            this.associatedName = "" + peerID;
             UpdateLastSeen();
         }
-        public string GetPeerID()
+        public int GetPeerID()
         {
             return peerID;
         }
