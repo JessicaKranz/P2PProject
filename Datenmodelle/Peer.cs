@@ -10,9 +10,6 @@ namespace Datenmodelle
         string associatedName;
         DateTime lastSeen;
 
-        //string peerIPAddress;       //Mit Fragezeichen hier stehen lassen -> doch weg gemacht
-        //string connectionPortNr;    //Mit Fragezeichen hier stehen lassen -> doch weg gemacht
-
         public Peer(string peerID, string associatedName)
         {
             if(int.Parse(peerID)< Math.Pow(10, 7)||int.Parse(peerID)> (int)Math.Pow(10, 8) - 1)
@@ -52,7 +49,6 @@ namespace Datenmodelle
         {
             return lastSeen;
         }
-
         public void UpdateLastSeen()
         {
             lastSeen = DateTime.Now;
