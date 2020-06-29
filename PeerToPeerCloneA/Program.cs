@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -267,7 +268,7 @@ namespace PeerToPeerCloneA
         /*Hier passiert die Logic eines Peers. Hier steht was er bei welchem Nachrichtentyp Macht etc*/
         private static void ProzessNachricht(Message n)
         {
-
+            
             switch (n.Type)
             {
                 case PeerEntry:
@@ -306,18 +307,22 @@ namespace PeerToPeerCloneA
         }
         static void PeerEntryMethod(Message n)
         {
+
             if (n.Ttl.Substring(0, 3) != "999")
             {
                 throw new System.ArgumentException(" Have received Invalid Message with: Peer Entry request but with TTL != 999x ");
             }
-            int wishedNeighbours = Int32.Parse(n.Ttl.Substring(3, 1)); //vierte stelle der TTL
+            //SHOULD BE TTL MANIPULATION DELETE THE ABOVE AFTER REWORK.
+            /*
+            n.Ttl = n.Ttl - 1;
+             */
+            int wishedNeighbours = 5; // n.WishedNeighbours; TODO should be like this on the left //MAYBE EVEN DIREKT MANIPULATION IN n?
             if (WillIBecomeANewNeighbour())
             {
                 wishedNeighbours--;
-                string ipAdresse = n.PlainText;
-                ConnectTCP(ipAdresse);
+                ConnectTCP(n.SendersIP);
             }
-            if (wishedNeighbours > 0)
+            if (wishedNeighbours > 0 /*&& n.Ttl > 0*/) //TODO ACTIVAT THIS ONCE TTL IS AN INTEGER
             {
                 SendPJMessage(new Message
                 {
@@ -333,20 +338,14 @@ namespace PeerToPeerCloneA
 
         static void PeerJoinMethod(Message n)
         {
-            if (n.Ttl.Substring(0, 3) != "000")
-            {
-                throw new System.ArgumentException(" Have received Invalid Message with: Peer Join propagation request but with TTL != 000x ");
-            }
-            int wishedNeighbours = Int32.Parse(n.Ttl.Substring(3, 1)); //vierte stelle der TTL gibt die Wunschzahl der Nachbarn an
+            int wishedNeighbours = 5; // n.WishedNeighbours; TODO should be like this on the left
 
             if (!neighbours.Contains(/*Wo Connection.parterPeer.GetPeerID() = n.OriginID*/new Connection("dummy")))//DO I KNOW THIS PEER ALREADY? Schaue in der Neighbours Liste nach 
             {
-                Console.WriteLine("TODO HERE YOU MUST REJECT THE OFFER BUT STILL CARRY ON!");
                 if (WillIBecomeANewNeighbour())
                 {
                     wishedNeighbours--;
-                    string ipAdresse = n.PlainText;
-                    ConnectTCP(ipAdresse);
+                    ConnectTCP(n.SendersIP);
                 }
             }
 
@@ -371,12 +370,12 @@ namespace PeerToPeerCloneA
 
         static Boolean WillIBecomeANewNeighbour()
         {
-            return true;
+            return true; // TODO Should be like this below. Just delet stuff on the left.
             Random rand1 = new Random();
             return rand1.NextDouble() < myFish.GetPortion();
         }
 
-        static void ConnectTCP(string ipAdresse)
+        static void ConnectTCP(IPAddress ipAdresse)
         {
             Console.WriteLine("Ich verbinde mich jetzt mit \"" + ipAdresse + "\"! (In wirklichkeit tue ich das noch nicht. Das kommt aber noch.");
             //TODO stelle verbindung mit dem Peer an folgender Ip.Adresse her. Fordere dafür alle informationen an die du brauchst. 

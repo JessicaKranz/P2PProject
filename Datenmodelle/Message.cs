@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Linq;
+using System.Net;
 using System.Xml.Schema;
 
 namespace Datenmodelle
@@ -28,23 +29,43 @@ namespace Datenmodelle
         /// <summary>
         /// EntryPeer and JoinPeer use TTLs differently
         /// </summary>
-        public string Ttl { get; set; }               
+        public string Ttl { get; set; }             //TODO CHANGE TO INT ONCE SERIALISING AND DESERIALISING IS A THING!                 
         /// <summary>
         /// target ID
         /// </summary>
-        public string DestinationId { get; set; }  
+        public string DestinationId { get; set; }  //TODO CHANGE TO INT ONCE SERIALISING AND DESERIALISING IS A THING!  (Maybe Check for valid input)
         /// <summary>
         /// senders ID
         /// </summary>
-        public string SourceId { get; set; }          
+        public string SourceId { get; set; }          //TODO CHANGE TO INT ONCE SERIALISING AND DESERIALISING IS A THING!  (Maybe Check for valid input)
         /// <summary>
         /// senders name
         /// </summary>
-        public string AuthorName { get; set; }
+        public string AuthorName { get; set; } 
         /// <summary>
         /// messages payload
         /// </summary>
         public string PlainText { get; set; }
+
+        /// <summary>
+        /// TimeStamp of when the Message was Sent
+        /// </summary>
+        public DateTime TimeStamp { get; set; }  //TODO TALK TO JESSI ABOUT MAYBE CREATING THIS IN THE CONSTRUKTOR!
+
+        /// <summary>
+        /// A fish that is passed around in the network, to approximate the number of Peers connected.
+        /// </summary>
+        public Fish Fish { get; set; } //TODO CHANGE TO INT ONCE SERIALISING AND DESERIALISING IS A THING!
+
+        /// <summary>
+        /// IP Address from the Sender of the Original Message
+        /// </summary>
+        public IPAddress SendersIP { get; set; } 
+
+        /// <summary>
+        /// The Number of neighbours a joining Peer to the Overlay wants to have.
+        /// </summary>
+        public int WishedNeighbours { get; set; }
         
 
         
