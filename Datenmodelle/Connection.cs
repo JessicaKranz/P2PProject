@@ -27,6 +27,11 @@ namespace Datenmodelle
             this.myIPAddress = myIPAddress;
             this.myPortNr = myPortNr;
         }
+
+        /// <summary>
+        /// This was created Only for Test Cases and should soon seice existance. 
+        /// </summary>
+        /// <param name="dummy"></param>
         public Connection(string dummy)
         {
             if (dummy != "dummy")
@@ -43,8 +48,5 @@ namespace Datenmodelle
             this.myPortNr = "dummy";
 
         }
-
-
-
     }
 }
