@@ -15,46 +15,49 @@ namespace CommonLogic
             {
                 Thread.Sleep(300);
                 string line = Console.ReadLine();
-
-                Byte[] data = System.Text.Encoding.ASCII.GetBytes(line);
-
-                foreach (var client in clients)
+                if (line.Length != 0)
                 {
-                    try
+
+                    Byte[] data = System.Text.Encoding.ASCII.GetBytes(line);
+
+                    foreach (var client in clients)
                     {
-                        NetworkStream stream = client.GetStream();
+                        try
+                        {
+                            NetworkStream stream = client.GetStream();
 
-                        // Send the message to the connected TcpServer.
-                        stream.Write(data, 0, data.Length);
+                            // Send the message to the connected TcpServer.
+                            stream.Write(data, 0, data.Length);
 
-                        // Receive the TcpServer.response.
+                            // Receive the TcpServer.response.
 
-                        // String to store the response ASCII representation.
-                        String responseData = String.Empty;
+                            // String to store the response ASCII representation.
+                            String responseData = String.Empty;
 
-                        // Read the first batch of the TcpServer response bytes.
-                        Int32 bytes = stream.Read(data, 0, data.Length);
-                        responseData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
-                        Console.WriteLine("Received: {0}", responseData);
+                            // Read the first batch of the TcpServer response bytes.
+                            Int32 bytes = stream.Read(data, 0, data.Length);
+                            responseData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
+                            Console.WriteLine("Received: {0}", responseData);
 
-                        //if (line.Equals("quit"))
-                        //{
-                        //    go_on = false;
-                        //    // Close everything.
-                        //stream.Close();
-                        //client.Close();
-                        //Console.WriteLine("Disconnected");
-                        //}
-                        //}
+                            //if (line.Equals("quit"))
+                            //{
+                            //    go_on = false;
+                            //    // Close everything.
+                            //stream.Close();
+                            //client.Close();
+                            //Console.WriteLine("Disconnected");
+                            //}
+                            //}
 
-                    }
-                    catch (ArgumentNullException e)
-                    {
-                        Console.WriteLine("ArgumentNullException: {0}", e);
-                    }
-                    catch (SocketException e)
-                    {
-                        Console.WriteLine("SocketException: {0}", e);
+                        }
+                        catch (ArgumentNullException e)
+                        {
+                            Console.WriteLine("ArgumentNullException: {0}", e);
+                        }
+                        catch (SocketException e)
+                        {
+                            Console.WriteLine("SocketException: {0}", e);
+                        }
                     }
                 }
             }
