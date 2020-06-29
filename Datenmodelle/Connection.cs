@@ -39,11 +39,11 @@ namespace Datenmodelle
                 throw new System.ArgumentException("You should not execute this code. This is just for testing purposes. If you want to test. Use \"dummy\" as the string input");
             }
             Random rand = new Random();
-            this.partnerPeer = new Peer(""+ rand.Next(1 * (int)Math.Pow(10, 7), 1 * (int)Math.Pow(10, 8) - 1));
+            this.partnerPeer = new Peer(rand.Next(1 * (int)Math.Pow(10, 7), 1 * (int)Math.Pow(10, 8) - 1));
             this.partnerIPAddress = "dummy";
             this.partnerPortNr = "dummy";
 
-            this.mySelf = new Peer("" + rand.Next(1 * (int)Math.Pow(10, 7), 1 * (int)Math.Pow(10, 8) - 1));
+            this.mySelf = new Peer(rand.Next(1 * (int)Math.Pow(10, 7), 1 * (int)Math.Pow(10, 8) - 1));
             this.myIPAddress = "dummy";
             this.myPortNr = "dummy";
 
