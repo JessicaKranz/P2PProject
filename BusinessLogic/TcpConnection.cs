@@ -129,6 +129,11 @@ namespace CommonLogic
         public static void Server(Int32 port)
         {
             Console.WriteLine("Hello from the server");
+
+            // todo do better
+            string joinMessage = "Join";
+            joinMessage = joinMessage.PadRight(128 + 4 - joinMessage.Length, '-');
+
             TcpListener server = null;
             try
             {
@@ -168,33 +173,15 @@ namespace CommonLogic
                         data = System.Text.Encoding.ASCII.GetString(bytes, 0, i);
                         Console.WriteLine("Received: {0}", data);
 
-                        string joinMessage = "Join";
-                        joinMessage = joinMessage.PadRight(128 + 4 - joinMessage.Length, '-');
+                        
                         if (data == joinMessage)
                         {
-                            // select one known neighbor or the own address and send it back
-                            
-
-                            byte[] msg = System.Text.Encoding.ASCII.GetBytes("HeyWelcome");
-                            // Send back a response.
-                            stream.Write(msg, 0, msg.Length);
-                            data = System.Text.Encoding.ASCII.GetString(msg, 0, msg.Length);
-
-                            Console.WriteLine("Sent: {0}", data);
+                            OnPeerJoin(data, stream);
                         }
                         else
                         {
-                            // Process the data sent by the client.
-                            data = data.ToUpper();
-
-                            byte[] msg = System.Text.Encoding.ASCII.GetBytes(data);
-                            // Send back a response.
-                            stream.Write(msg, 0, msg.Length);
-                            Console.WriteLine("Sent: {0}", data);
+                            OnChatMessageReceived(data, stream);
                         }
-
-
-
                     }
 
                     // Shutdown and end connection
@@ -215,5 +202,30 @@ namespace CommonLogic
             Console.Read();
         }
 
+
+        public static void OnPeerJoin(string data, NetworkStream stream)
+        {
+            // select one known neighbor or the own address and send it back
+            // ...
+
+            byte[] msg = System.Text.Encoding.ASCII.GetBytes("HeyWelcome");
+            // Send back a response.
+            stream.Write(msg, 0, msg.Length);
+            data = System.Text.Encoding.ASCII.GetString(msg, 0, msg.Length);
+
+            Console.WriteLine("Sent: {0}", data);
+            //return an IPEndPoint as next Peer to contact
+        }    
+        
+        public static void OnChatMessageReceived(string data, NetworkStream stream)
+        {
+            // Process the data sent by the client.
+            data = data.ToUpper();
+
+            byte[] msg = System.Text.Encoding.ASCII.GetBytes(data);
+            // Send back a response.
+            stream.Write(msg, 0, msg.Length);
+            Console.WriteLine("Sent: {0}", data);
+        }
     }
 }
