@@ -29,8 +29,12 @@ namespace CommonLogic
 
 
         public static void Join(TcpClient knownTcpClient)
-        {
-            Byte[] data = System.Text.Encoding.ASCII.GetBytes("Join");
+        {          
+            string message = "Join";         
+            //stream readers can only process streams of known length
+            message = message.PadRight(128 + 4 - message.Length, '-');
+
+            Byte[] data = System.Text.Encoding.ASCII.GetBytes(message);
 
             try
             {
@@ -71,7 +75,9 @@ namespace CommonLogic
                 Thread.Sleep(300);
                 string line = Console.ReadLine();
                 if (line.Length != 0)
-                {
+                {                 
+                    //stream readers can only process streams of known length
+                    line = line.PadRight(128 + 4 - line.Length, ' ');
 
                     Byte[] data = System.Text.Encoding.ASCII.GetBytes(line);
 
@@ -161,8 +167,10 @@ namespace CommonLogic
                         // Translate data bytes to a ASCII string.
                         data = System.Text.Encoding.ASCII.GetString(bytes, 0, i);
                         Console.WriteLine("Received: {0}", data);
-                        
-                        if(data == "Join")
+
+                        string joinMessage = "Join";
+                        joinMessage = joinMessage.PadRight(128 + 4 - joinMessage.Length, '-');
+                        if (data == joinMessage)
                         {
                             // select one known neighbor or the own address and send it back
                             
