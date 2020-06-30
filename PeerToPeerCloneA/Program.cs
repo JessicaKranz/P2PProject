@@ -197,7 +197,8 @@ namespace PeerToPeerCloneA
         {
             n.Ttl--;
 
-            if (!neighbours.Contains(/*Wo Connection.parterPeer.GetPeerID() = n.OriginID*/new Connection("dummy")))//DO I KNOW THIS PEER ALREADY? Schaue in der Neighbours Liste nach 
+            //if (neighbours.Where(x => x.partnerIPAddress == n.SendersIP)) //TODO
+            if(true)
             {
                 if (WillIBecomeANewNeighbour())
                 {

@@ -8,16 +8,16 @@ namespace Datenmodelle
     public class Connection
     {
         Peer partnerPeer;
-        string partnerIPAddress;
-        string partnerPortNr;
+        public IPAddress partnerIPAddress;
+        int partnerPortNr;
 
         Peer mySelf;
-        string myIPAddress;
-        string myPortNr;
+        IPAddress myIPAddress;
+        int myPortNr;
 
         //Maybe have Servers Running? Inhere in connections? Maybe Have Server datenstrucktur, die solche funktionalitäten übernimmt?
 
-        public Connection(Peer partnerPeer, string partnerIPAddress, string partnerPortNr, Peer mySelf, string myIPAddress, string myPortNr)
+        public Connection(Peer partnerPeer, IPAddress partnerIPAddress, int partnerPortNr, Peer mySelf, IPAddress myIPAddress, int myPortNr)
         {
             this.partnerPeer = partnerPeer;
             this.partnerIPAddress = partnerIPAddress;
