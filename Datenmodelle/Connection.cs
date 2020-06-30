@@ -40,12 +40,12 @@ namespace Datenmodelle
             }
             Random rand = new Random();
             this.partnerPeer = new Peer(rand.Next(1 * (int)Math.Pow(10, 7), 1 * (int)Math.Pow(10, 8) - 1));
-            this.partnerIPAddress = "dummy";
-            this.partnerPortNr = "dummy";
+            //this.partnerIPAddress = "dummy";
+            //this.partnerPortNr = "dummy";
 
             this.mySelf = new Peer(rand.Next(1 * (int)Math.Pow(10, 7), 1 * (int)Math.Pow(10, 8) - 1));
-            this.myIPAddress = "dummy";
-            this.myPortNr = "dummy";
+            //this.myIPAddress = "dummy";
+            //this.myPortNr = "dummy";
 
         }
     }

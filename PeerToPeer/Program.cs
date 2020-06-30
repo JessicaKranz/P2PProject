@@ -1,26 +1,27 @@
 ﻿using CommonLogic;
+using Datenmodelle;
 using System.Collections.Generic;
-using System.Net.Sockets;
-using System.Threading;
 
 namespace PeerToPeerCloneC
 {
     class Program
     {
+        public static List<IP> serverAddresses = new List<IP>()
+        {
+            new IP("127.0.0.1", 13002),
+            new IP("127.0.0.1", 13003)
+        };
+
+        static List<IP> tcpClientAdresses = new List<IP>()
+        {
+            new IP("127.0.0.1", 13000),
+            new IP("127.0.0.1", 13001)
+        };
+
         static void Main(string[] args)
         {
-            new Thread(o => TcpConnection.Server(13002)).Start();
-            new Thread(o => TcpConnection.Server(13003)).Start();
-
-            //Servers must be running before clients may connect
-            Thread.Sleep(1000);
-
-            List<TcpClient> tcpClients = new List<TcpClient>
-            {
-                new TcpClient("127.0.0.1", 13000),
-                new TcpClient("127.0.0.1", 13001)
-            };
-            new Thread(o => TcpConnection.Client(tcpClients)).Start();
-        }     
+            TcpConnection tcpConnection = new TcpConnection();
+            tcpConnection.StartServersAndClients(serverAddresses, tcpClientAdresses);
+        }
     }
 }

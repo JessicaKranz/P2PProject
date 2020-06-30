@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Datenmodelle;
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
@@ -8,7 +9,24 @@ namespace CommonLogic
 {
     public class TcpConnection
     {
+        static List<TcpClient> tcpClients = new List<TcpClient>();
+
         static bool go_on = true;
+
+        public void StartServersAndClients(List<IP> serverAddresses, List<IP> tcpClientAdresses)
+        {
+            //Start all servers in separate threads
+            serverAddresses.ForEach(address => new Thread(o => TcpConnection.Server(address.port)).Start());
+
+            //Servers must be running before clients may connect
+            Thread.Sleep(1000);
+
+            //Create all tcpClients
+            tcpClientAdresses.ForEach(address => tcpClients.Add(new TcpClient(address.address, address.port)));
+            //Start one threads that manages the connection to all communication partners
+            new Thread(o => TcpConnection.Client(tcpClients)).Start();
+        }
+
         public static void Client(List<TcpClient> clients)
         {
             while (go_on)
