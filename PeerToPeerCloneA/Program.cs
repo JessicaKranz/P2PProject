@@ -308,6 +308,7 @@ namespace PeerToPeerCloneA
             
             //SendMessage(new Message { },new Connection )
         }
+        #endregion
         #region Allerlei Funktionen
         public static IPAddress GetLocalIPAddress()
         {
