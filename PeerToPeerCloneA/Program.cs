@@ -2,8 +2,11 @@
 using Datenmodelle;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Net;
+using System.Net.Mail;
+using System.Net.Sockets;
 using System.Timers;
 
 namespace PeerToPeerCloneA
@@ -25,10 +28,14 @@ namespace PeerToPeerCloneA
         private static Fish myFish = new Fish(rand.Next(), rand.NextDouble());
         private static System.Timers.Timer myFishTimer;
         private static int wunschAnzahlNachbarn;
-        private static int peerID = rand.Next(1 * (int)Math.Pow(10, 7), 1 * (int)Math.Pow(10, 8) - 1); //Erzeugt Zahlenzwischen 10.000.000 und 99.999.999
-        private static string myName = peerID.ToString();
-        private static List<Peer> bekanntePeers;    //TODO Liste wo bekannte peirs als Peers  abgespeichert sind. GRUNDSATZFRAGE: brauchen wir das?
+        private static int myPeerID = rand.Next(1 * (int)Math.Pow(10, 7), 1 * (int)Math.Pow(10, 8) - 1); //Erzeugt Zahlenzwischen 10.000.000 und 99.999.999
+        private static string myName = myPeerID.ToString();
+        private static List<Peer> bekanntePeers;    //TODO Liste wo bekannte Peers als Peers  abgespeichert sind. GRUNDSATZFRAGE: brauchen wir das?
         private static List<Connection> neighbours;  //TODO Liste wo die Nachbarn abgespeichert sind. Als Connection. Mit jeweils eigenem und gegenteiligem Peer object (brauch man das?) , ipAddresse und PortNummber
+        private static IPAddress myIPAddress = GetLocalIPAddress();     //Meine IP Addresse
+        private static List<int> myGroupChatsIDs = new List<int>();                    //Die nächste drei Listen sind streng Abhänig voneinander
+        private static List<List<Peer>> groupChatMembers = new List<List<Peer>>();      //Zusammen Dokumentieren sie in welchen Group Chats der Aktuelle Peer ist, und welche anderen Peers auch in diesen Chats sind.
+        private static List<string> myGroupChatsNames = new List<string>();             // Ich freue mich über einen eleganteren Weg. Bzw soll ich dafür eine Datenstrucktur anlegen?
         #endregion
 
         static void Main(string[] args)
@@ -107,60 +114,64 @@ namespace PeerToPeerCloneA
             ProzessNachricht(nachricht);
             Console.WriteLine("-------------Nachricht Test Block Ende-------------");
             */
-            #endregion
+            #endregion 
 
             TcpConnection tcpConnection = new TcpConnection();
             tcpConnection.StartServersAndClients(serverAddresses, tcpClientAdresses);         
         }
-
-        const string PeerEntry = "PE"; //Eine Erfolgreiche PE Nachricht hat eine TTL "999x" wobei x auch ein Integer zwischen 1 und 9 ist. x gibt dabei die Zahl der Wunschnachbarn an.
-                                       // Zusätzlich gilt bei einer PE Message, dass der Message teil leer ist, bis auf die IP.Addresse desjenigen Peers, der die Anfrage gestellt hat. 
+        #region var def NachrichtenLogik
+        const string PeerEntry = "PE";                                   
         const string PeerJoin = "PJ";
         const string PersonalMessage = "PM";
         const string GroupMessage = "GM";
         const string FishTank = "FT";
         const string WannabeNeighbour = "WN";
+ 
         //const string 
 
+
+        #endregion
+        #region EingehendeNachrichtenLogik 
+        //Für Jessi zum einklappen :), damit sie nicht scrollen muss
         /*Hier passiert die Logic eines Peers. Hier steht was er bei welchem Nachrichtentyp Macht etc*/
         private static void ProzessNachricht(Message n)
         {
-            if(!bekanntePeers.Contains(new Peer(n.SourceId, n.AuthorName))){ // TODO Ich will diese Abfrage ohne n.Author Name machen können (nur nach ID suchen)
+            //TODO entweder hier oder woanders: Check ob man diese Nachricht schonmal gesehn hat über n.Timestamp und n.origin, n.destination. Man braucht dafür ne Liste.
+            if(null != bekanntePeers.Where(x => x.GetPeerID() == n.SourceId && x.GetAssociatedName() == n.AuthorName)){
                 bekanntePeers.Add(new Peer(n.SourceId, n.AuthorName));
             }
-            else if(bekanntePeers.Contains(new Peer(n.SourceId, n.AuthorName)))
+            else if(null != bekanntePeers.Where(x => x.GetPeerID() == n.SourceId))
             {
-                bekanntePeers.Remove(new Peer(n.SourceId, n.AuthorName));    // TODO OLD AUTHORS NAME MUST BE REMOVED
-                bekanntePeers.Add(new Peer(n.SourceId, n.AuthorName));      //  TODO Neuer AUTHORS Name kann eingefügt werden. Alternativ auch ein Update möglich
+                bekanntePeers.Find(x => x.GetPeerID() == n.SourceId).SetAssosiatedName(n.AuthorName);
             }
             else
             {
-                // bekanntePeers.Find(new Peer(n.SourceId, n.AuthorName)).UpdateLastSeen      //TODO Update Last Seen how?
+                bekanntePeers.Find(x => x.GetPeerID() == n.SourceId && x.GetAssociatedName() == n.AuthorName).UpdateLastSeen(); 
             }
             
             switch (n.Type)
             {
                 case PeerEntry:
-                    PeerEntryMethod(n);
+                    IncommingPeerEntryMessage(n);
                     break;
                 case PeerJoin:
-                    PeerJoinMethod(n);
+                    IncommingPeerJoinMessage(n);
                     break;
                 case PersonalMessage:
-                    //TODO dostuff()
+                    IncommingPersonalMessage(n);
                     break;
                 case GroupMessage:
-                    //TODO dostuff()
+                    IncommingGroupMessage(n);
                     break;
                 case FishTank:
-                    FishTankMethod(n);
+                    IncommingFishTankMessage(n);
                     break;
                 case WannabeNeighbour:
                     //TODO dostuff()
                     break;
             }
         }
-        static void PeerEntryMethod(Message n)
+        static void IncommingPeerEntryMessage(Message n)
         {
             n.Ttl=(int)(n.WishedNeighbours*3*(1+1/myFish.GetPortion()));          // Erzeuge eine TTL die Zukksessiv heruntergesetzt wird, damit es im Overlay keine Geisternachrichten gibt.
             if (WillIBecomeANewNeighbour())
@@ -170,7 +181,7 @@ namespace PeerToPeerCloneA
             }
             if (n.WishedNeighbours > 0 && n.Ttl > 0)
             {
-                SendPJMessage(new Message
+                SendMessageFloodOverlay(new Message
                 {
                     Type = "PJ",
                     Ttl = n.Ttl,
@@ -182,12 +193,11 @@ namespace PeerToPeerCloneA
             }
         }
 
-        static void PeerJoinMethod(Message n)
+        static void IncommingPeerJoinMessage(Message n)
         {
             n.Ttl--;
 
-            //if (neighbours.Where(x => x.partnerIPAddress == n.SendersIP)) //TODO
-            if(true)
+            if(null == neighbours.Where(x => x.partnerIPAddress == n.SendersIP))
             {
                 if (WillIBecomeANewNeighbour())
                 {
@@ -198,7 +208,7 @@ namespace PeerToPeerCloneA
 
             if (n.WishedNeighbours > 0)
             {
-                SendPJMessage(new Message
+                SendMessageFloodOverlay(new Message
                 {
                     Type = "PJ",
                     Ttl = n.Ttl,
@@ -210,8 +220,39 @@ namespace PeerToPeerCloneA
             }
         }
 
+        static void IncommingPersonalMessage(Message n)
+        {
+            n.Ttl--;
+            if (n.DestinationId == myPeerID)
+            {
+                //Maybe Find a better way to deliver
+                Console.WriteLine("["+n.TimeStamp+n.AuthorName+"] "+" wrote to you:"+n.ChatMessage);
+            }
+            else if(null != neighbours.Where(x => x.partnerPeer.GetPeerID() == n.DestinationId))
+            {
+                SendMessage(n, neighbours.Where(x => x.partnerPeer.GetPeerID() == n.DestinationId).FirstOrDefault());
+            }
+            else
+            {
+                SendMessageFloodOverlay(n);
+            }
+        }
 
-        static void FishTankMethod(Message n)
+        static void IncommingGroupMessage(Message n)
+        {
+            n.Ttl--;
+            if (myGroupChatsIDs.Contains(n.DestinationId))
+            {
+                //Maybe Find a better way to deliver
+                Console.WriteLine("[" + n.TimeStamp + n.AuthorName + "] " + " wrote in \""+n.GroupChatName+"\":" + n.ChatMessage);
+            }
+            else
+            {
+                SendMessageFloodOverlay(n);
+            }
+        }
+
+        static void IncommingFishTankMessage(Message n)
         {
             if (n.Fish.GetSize() > myFish.GetSize())
             {
@@ -225,6 +266,113 @@ namespace PeerToPeerCloneA
             }
            
         }
+            
+        #endregion
+
+        #region Ausgehende Nachrichten Logik
+        public static void SendPeerEntryMessage()
+        {
+            //FOR THIS WE DONT HAVE A CONNECTION YET? WHAT TO DO?
+            
+            //SendMessage(new Message { },new Connection )
+        }
+
+        private static void SendFTMessage()
+        {
+            myFish.SetPortion(myFish.GetPortion() / neighbours.Count() + 1); //Aktualisiere den eigenen Fish und versende Ihn. //TOTALK muss man das Synchronized machen?
+            SendMessageFloodOverlay(new Message
+            {
+                Fish = myFish,
+                SourceId = myPeerID,
+                AuthorName = myName,
+            });
+        }
+
+        public static void SendPersonalMessage(string PM, int destinationID)
+        {
+            SendMessageFloodOverlay(new Message
+            {
+                Type = "PM",
+                Ttl = 7, //(int)(3 * (1 + 1 / myFish.GetPortion())), //TODO CHECK IF PMS REACH DESTINATION. OTHERWISE MAKE TTL HIGHER Maybe the given Algorithm will work
+                AuthorName = myName,
+                DestinationId = destinationID,
+                SourceId = myPeerID,
+                ChatMessage = PM,
+            });
+        }
+        public static void SendGroupMessage(string GM, int destinationID)
+        {
+
+        }
+
+        /// <summary>
+        /// Versendet die Nachricht n an einen zufälligen Nachbarn im Overlay 
+        /// </summary>
+        /// <param name="n"></param>
+        private static void SendMessageSingularRandom(Message n)
+        {
+            //Maybe not send it back to previous Peer but not important
+            var randomNeighbour = neighbours[rand.Next(neighbours.Count) - 1];
+            SendMessage(n, randomNeighbour);
+        }
+
+        /// <summary>
+        /// Versendet die Nachricht n an alle bekannten Nachbarn (Die Gesamte neigbours Liste)
+        /// </summary>
+        /// <param name="n"></param>
+        private static void SendMessageFloodOverlay(Message n)
+        {
+            //Maybe not send it back to previous Peer but not important (n.SourceId tut nicht immer das gewünschte.
+            foreach (Connection neighbour in neighbours)
+            {
+                SendMessage(n, neighbour);
+            }
+        }
+
+        /// <summary>
+        /// Sendet Nachricht n an den Peer mit dem er durch Connection c verbunden ist
+        /// </summary>
+        /// <param name="n"></param>
+        /// <param name="c"></param>
+        private static void SendMessage(Message n, Connection c)
+        {
+            //TODO 
+        }
+
+        #endregion
+        #region Allerlei Funktionen
+        public static IPAddress GetLocalIPAddress()
+        {
+            var host = Dns.GetHostEntry(Dns.GetHostName());
+            foreach (var ip in host.AddressList)
+            {
+                if (ip.AddressFamily == AddressFamily.InterNetwork)
+                {
+                    return ip;
+                }
+            }
+            throw new Exception("No network adapters with an IPv4 address in the system!");
+        }
+        static void ConnectTCP(IPAddress ipAdresse, Peer newNeighbour)
+        {
+
+            Console.WriteLine("Ich verbinde mich jetzt mit \"" + ipAdresse + "\"! (In wirklichkeit tue ich das noch nicht. Das kommt aber noch.");
+            int neigboursPortHeUsesToTalkToMe = 666; // TODO OR TODELETE FROM CONNECTION DATENMODELL
+            int myPortIUseToTalkWithHim = 666;       // TODO OR TODELETE FROM CONNECTION DATENMODELL
+            neighbours.Add(new Connection(newNeighbour, ipAdresse, neigboursPortHeUsesToTalkToMe, new Peer(myPeerID, myName), myIPAddress, myPortIUseToTalkWithHim));
+            //TODO stelle verbindung mit dem Peer an folgender Ip.Adresse her. Fordere dafür alle informationen an die du brauchst. 
+        }
+        static Boolean WillIBecomeANewNeighbour()
+        {
+            return true; // TODO Should be like this below. Just delet stuff on the left.
+            Random rand1 = new Random();
+            return rand1.NextDouble() < myFish.GetPortion();
+        }
+        public static void Reset(System.Timers.Timer timer)
+        {
+            timer.Stop();
+            timer.Start();
+        }
         private static void SetFishTankTimer()
         {
             // Create a timer with a 60 second interval.
@@ -234,52 +382,12 @@ namespace PeerToPeerCloneA
             myFishTimer.AutoReset = true;
             myFishTimer.Enabled = true;
         }
-        private static void OnFishTimerEvent(Object source , ElapsedEventArgs e)
+        private static void OnFishTimerEvent(Object source, ElapsedEventArgs e)
         {
             SendFTMessage();
         }
-
-
-        private static void SendPJMessage(Message pjMessage)
-        {
-            //TODO Send PJ MEssage over Overlay
-            //Pick a random Connection from: neighbours And send this Message to that Peer
-        }
-        private static void SendFTMessage()
-        {
-            myFish.SetPortion(myFish.GetPortion() / neighbours.Count()+1); //Aktualisiere den eigenen Fish und versende Ihn. //TOTALK muss man das Synchronized machen?
-            Message FTMessage = new Message
-                {
-                    Fish = myFish,
-                    SourceId = peerID,
-                    AuthorName = myName,
-                };
-            //TODO Floode diese Message an Alle Nachbarn
-        }
-
-        static Boolean WillIBecomeANewNeighbour()
-        {
-            return true; // TODO Should be like this below. Just delet stuff on the left.
-            Random rand1 = new Random();
-            return rand1.NextDouble() < myFish.GetPortion();
-        }
-
-        static void ConnectTCP(IPAddress ipAdresse, Peer newNeighbour)
-        {
-            // neighbours
-
-            Console.WriteLine("Ich verbinde mich jetzt mit \"" + ipAdresse + "\"! (In wirklichkeit tue ich das noch nicht. Das kommt aber noch.");
-            //TODO stelle verbindung mit dem Peer an folgender Ip.Adresse her. Fordere dafür alle informationen an die du brauchst. 
-        }
-
-        /// <summary>
-        /// Not Sure if this is correct but if it is, it should Reset a timer by stopping it and then reengaging it.
-        /// </summary>
-        /// <param name="timer"></param>
-        public static void Reset(System.Timers.Timer timer)
-        {
-            timer.Stop();
-            timer.Start();
-        }
+        #endregion
     }
+
+
 }

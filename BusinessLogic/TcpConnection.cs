@@ -27,47 +27,6 @@ namespace CommonLogic
             new Thread(o => TcpConnection.Client(tcpClients)).Start();
         }
 
-
-        public static void Join(TcpClient knownTcpClient)
-        {          
-            string message = "Join";         
-            //stream readers can only process streams of known length
-            message = message.PadRight(128 + 4 - message.Length, '-');
-
-            Byte[] data = System.Text.Encoding.ASCII.GetBytes(message);
-
-            try
-            {
-                NetworkStream stream = knownTcpClient.GetStream();
-
-                // Send the message to the connected TcpServer.
-                stream.Write(data, 0, data.Length);
-
-                // Receive the TcpServer.response.
-
-                // String to store the response ASCII representation.
-                String responseData = String.Empty;
-
-                // Read the first batch of the TcpServer response bytes.
-                Int32 bytes = stream.Read(data, 0, data.Length);
-                responseData = System.Text.Encoding.ASCII.GetString(data, 0, data.Length);
-                Console.WriteLine("Received: {0}", responseData);
-
-                // Close everything.
-                //stream.Close();
-                //knownTcpClient.Close();
-                Console.WriteLine("Disconnected");
-            }
-            catch (ArgumentNullException e)
-            {
-                Console.WriteLine("ArgumentNullException: {0}", e);
-            }
-            catch (SocketException e)
-            {
-                Console.WriteLine("SocketException: {0}", e);
-            }
-        }
-
         public static void Client(List<TcpClient> clients)
         {
             while (go_on)
@@ -75,9 +34,7 @@ namespace CommonLogic
                 Thread.Sleep(300);
                 string line = Console.ReadLine();
                 if (line.Length != 0)
-                {                 
-                    //stream readers can only process streams of known length
-                    line = line.PadRight(128 + 4 - line.Length, ' ');
+                {
 
                     Byte[] data = System.Text.Encoding.ASCII.GetBytes(line);
 
@@ -129,11 +86,6 @@ namespace CommonLogic
         public static void Server(Int32 port)
         {
             Console.WriteLine("Hello from the server");
-
-            // todo do better
-            string joinMessage = "Join";
-            joinMessage = joinMessage.PadRight(128 + 4 - joinMessage.Length, '-');
-
             TcpListener server = null;
             try
             {
@@ -173,15 +125,14 @@ namespace CommonLogic
                         data = System.Text.Encoding.ASCII.GetString(bytes, 0, i);
                         Console.WriteLine("Received: {0}", data);
 
-                        
-                        if (data == joinMessage)
-                        {
-                            OnPeerJoin(data, stream);
-                        }
-                        else
-                        {
-                            OnChatMessageReceived(data, stream);
-                        }
+                        // Process the data sent by the client.
+                        data = data.ToUpper();
+
+                        byte[] msg = System.Text.Encoding.ASCII.GetBytes(data);
+
+                        // Send back a response.
+                        stream.Write(msg, 0, msg.Length);
+                        //Console.WriteLine("Sent: {0}", data);
                     }
 
                     // Shutdown and end connection
@@ -202,30 +153,5 @@ namespace CommonLogic
             Console.Read();
         }
 
-
-        public static void OnPeerJoin(string data, NetworkStream stream)
-        {
-            // select one known neighbor or the own address and send it back
-            // ...
-
-            byte[] msg = System.Text.Encoding.ASCII.GetBytes("HeyWelcome");
-            // Send back a response.
-            stream.Write(msg, 0, msg.Length);
-            data = System.Text.Encoding.ASCII.GetString(msg, 0, msg.Length);
-
-            Console.WriteLine("Sent: {0}", data);
-            //return an IPEndPoint as next Peer to contact
-        }    
-        
-        public static void OnChatMessageReceived(string data, NetworkStream stream)
-        {
-            // Process the data sent by the client.
-            data = data.ToUpper();
-
-            byte[] msg = System.Text.Encoding.ASCII.GetBytes(data);
-            // Send back a response.
-            stream.Write(msg, 0, msg.Length);
-            Console.WriteLine("Sent: {0}", data);
-        }
     }
 }
