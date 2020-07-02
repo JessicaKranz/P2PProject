@@ -30,9 +30,12 @@ namespace PeerToPeerCloneA
         private static int wunschAnzahlNachbarn;
         private static int myPeerID = rand.Next(1 * (int)Math.Pow(10, 7), 1 * (int)Math.Pow(10, 8) - 1); //Erzeugt Zahlenzwischen 10.000.000 und 99.999.999
         private static string myName = myPeerID.ToString();
-        private static List<Peer> bekanntePeers;    //TODO Liste wo bekannte peirs als Peers  abgespeichert sind. GRUNDSATZFRAGE: brauchen wir das?
+        private static List<Peer> bekanntePeers;    //TODO Liste wo bekannte Peers als Peers  abgespeichert sind. GRUNDSATZFRAGE: brauchen wir das?
         private static List<Connection> neighbours;  //TODO Liste wo die Nachbarn abgespeichert sind. Als Connection. Mit jeweils eigenem und gegenteiligem Peer object (brauch man das?) , ipAddresse und PortNummber
-        private static IPAddress myIPAddress = GetLocalIPAddress();
+        private static IPAddress myIPAddress = GetLocalIPAddress();     //Meine IP Addresse
+        private static List<int> myGroupChatsIDs = new List<int>();                    //Die nächste drei Listen sind streng Abhänig voneinander
+        private static List<List<Peer>> groupChatMembers = new List<List<Peer>>();      //Zusammen Dokumentieren sie in welchen Group Chats der Aktuelle Peer ist, und welche anderen Peers auch in diesen Chats sind.
+        private static List<string> myGroupChatsNames = new List<string>();             // Ich freue mich über einen eleganteren Weg. Bzw soll ich dafür eine Datenstrucktur anlegen?
         #endregion
 
         static void Main(string[] args)
@@ -116,17 +119,20 @@ namespace PeerToPeerCloneA
             TcpConnection tcpConnection = new TcpConnection();
             tcpConnection.StartServersAndClients(serverAddresses, tcpClientAdresses);         
         }
-
+        #region var def NachrichtenLogik
         const string PeerEntry = "PE";                                   
         const string PeerJoin = "PJ";
         const string PersonalMessage = "PM";
         const string GroupMessage = "GM";
         const string FishTank = "FT";
         const string WannabeNeighbour = "WN";
+ 
         //const string 
 
+
+        #endregion
         #region EingehendeNachrichtenLogik 
-            //Für Jessi zum einklappen :), damit sie nicht scrollen muss
+        //Für Jessi zum einklappen :), damit sie nicht scrollen muss
         /*Hier passiert die Logic eines Peers. Hier steht was er bei welchem Nachrichtentyp Macht etc*/
         private static void ProzessNachricht(Message n)
         {
@@ -146,26 +152,26 @@ namespace PeerToPeerCloneA
             switch (n.Type)
             {
                 case PeerEntry:
-                    IncommingPeerEntryMessageMethod(n);
+                    IncommingPeerEntryMessage(n);
                     break;
                 case PeerJoin:
-                    IncommingPeerJoinMessageMethod(n);
+                    IncommingPeerJoinMessage(n);
                     break;
                 case PersonalMessage:
-                    IncommingPersonalMessageMethod(n);
+                    IncommingPersonalMessage(n);
                     break;
                 case GroupMessage:
-                    //TODO dostuff()
+                    IncommingGroupMessage(n);
                     break;
                 case FishTank:
-                    IncommingFishTankMessageMethod(n);
+                    IncommingFishTankMessage(n);
                     break;
                 case WannabeNeighbour:
                     //TODO dostuff()
                     break;
             }
         }
-        static void IncommingPeerEntryMessageMethod(Message n)
+        static void IncommingPeerEntryMessage(Message n)
         {
             n.Ttl=(int)(n.WishedNeighbours*3*(1+1/myFish.GetPortion()));          // Erzeuge eine TTL die Zukksessiv heruntergesetzt wird, damit es im Overlay keine Geisternachrichten gibt.
             if (WillIBecomeANewNeighbour())
@@ -187,7 +193,7 @@ namespace PeerToPeerCloneA
             }
         }
 
-        static void IncommingPeerJoinMessageMethod(Message n)
+        static void IncommingPeerJoinMessage(Message n)
         {
             n.Ttl--;
 
@@ -214,7 +220,7 @@ namespace PeerToPeerCloneA
             }
         }
 
-        static void IncommingPersonalMessageMethod(Message n)
+        static void IncommingPersonalMessage(Message n)
         {
             n.Ttl--;
             if (n.DestinationId == myPeerID)
@@ -232,7 +238,21 @@ namespace PeerToPeerCloneA
             }
         }
 
-        static void IncommingFishTankMessageMethod(Message n)
+        static void IncommingGroupMessage(Message n)
+        {
+            n.Ttl--;
+            if (myGroupChatsIDs.Contains(n.DestinationId))
+            {
+                //Maybe Find a better way to deliver
+                Console.WriteLine("[" + n.TimeStamp + n.AuthorName + "] " + " wrote in \""+n.GroupChatName+"\":" + n.ChatMessage);
+            }
+            else
+            {
+                SendMessageFloodOverlay(n);
+            }
+        }
+
+        static void IncommingFishTankMessage(Message n)
         {
             if (n.Fish.GetSize() > myFish.GetSize())
             {
@@ -246,18 +266,43 @@ namespace PeerToPeerCloneA
             }
            
         }
+            
+        #endregion
 
-
+        #region Ausgehende Nachrichten Logik
+        public static void SendPeerEntryMessage()
+        {
+            //FOR THIS WE DONT HAVE A CONNECTION YET? WHAT TO DO?
+            
+            //SendMessage(new Message { },new Connection )
+        }
 
         private static void SendFTMessage()
         {
-            myFish.SetPortion(myFish.GetPortion() / neighbours.Count()+1); //Aktualisiere den eigenen Fish und versende Ihn. //TOTALK muss man das Synchronized machen?
+            myFish.SetPortion(myFish.GetPortion() / neighbours.Count() + 1); //Aktualisiere den eigenen Fish und versende Ihn. //TOTALK muss man das Synchronized machen?
             SendMessageFloodOverlay(new Message
-                {
-                    Fish = myFish,
-                    SourceId = myPeerID,
-                    AuthorName = myName,
-                });
+            {
+                Fish = myFish,
+                SourceId = myPeerID,
+                AuthorName = myName,
+            });
+        }
+
+        public static void SendPersonalMessage(string PM, int destinationID)
+        {
+            SendMessageFloodOverlay(new Message
+            {
+                Type = "PM",
+                Ttl = 7, //(int)(3 * (1 + 1 / myFish.GetPortion())), //TODO CHECK IF PMS REACH DESTINATION. OTHERWISE MAKE TTL HIGHER Maybe the given Algorithm will work
+                AuthorName = myName,
+                DestinationId = destinationID,
+                SourceId = myPeerID,
+                ChatMessage = PM,
+            });
+        }
+        public static void SendGroupMessage(string GM, int destinationID)
+        {
+
         }
 
         /// <summary>
@@ -277,8 +322,8 @@ namespace PeerToPeerCloneA
         /// <param name="n"></param>
         private static void SendMessageFloodOverlay(Message n)
         {
-            //Maybe not send it back to previous Peer but not important
-            foreach(Connection neighbour in neighbours)
+            //Maybe not send it back to previous Peer but not important (n.SourceId tut nicht immer das gewünschte.
+            foreach (Connection neighbour in neighbours)
             {
                 SendMessage(n, neighbour);
             }
@@ -294,20 +339,6 @@ namespace PeerToPeerCloneA
             //TODO 
         }
 
-        /// <summary>
-        /// Not Sure if this is correct but if it is, it should Reset a timer by stopping it and then reengaging it.
-        /// </summary>
-        /// <param name="timer"></param>
-
-        #endregion
-
-        #region Ausgehende Nachrichten Logik
-        public static void SendPeerEntryMessage()
-        {
-            //FOR THIS WE DONT HAVE A CONNECTION YET? WHAT TO DO?
-            
-            //SendMessage(new Message { },new Connection )
-        }
         #endregion
         #region Allerlei Funktionen
         public static IPAddress GetLocalIPAddress()
