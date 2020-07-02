@@ -2,7 +2,7 @@
 using Datenmodelle;
 using System.Collections.Generic;
 
-namespace PeerToPeerCloneA
+namespace PeerToPeerCloneB
 {
     class Program
     {       
@@ -13,7 +13,7 @@ namespace PeerToPeerCloneA
 
         static List<IP> tcpClientAdresses = new List<IP>()
         {
-            new IP("127.0.0.1", 13002)
+            //new IP("127.0.0.1", 13002)
         };
    
         static void Main(string[] args)
