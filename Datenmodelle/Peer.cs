@@ -1,9 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net.Sockets;
 using System.Text;
 
 namespace Datenmodelle
 {
+    public class PeerData
+    {
+        public List<IP> serverAddresses { get; set; }
+        public List<IP> tcpClientAddresses { get; set; }
+        public TcpClient tcpClient { get; set; }
+    }
+
     public class Peer
     {
         int peerID; 

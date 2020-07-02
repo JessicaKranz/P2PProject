@@ -2,7 +2,6 @@
 using Datenmodelle;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -12,16 +11,6 @@ namespace PeerToPeerCloneA
 {
     class Program
     {
-        public static List<IP> serverAddresses = new List<IP>()
-        {
-            new IP("127.0.0.1", 13000)
-        };
-
-        static List<IP> tcpClientAdresses = new List<IP>()
-        {
-            new IP("127.0.0.1", 13003)
-        };
-
         #region vardef
         private static Random rand = new Random();
         private static Fish myFish = new Fish(rand.Next(), rand.NextDouble());
@@ -113,10 +102,22 @@ namespace PeerToPeerCloneA
             ProzessNachricht(nachricht);
             Console.WriteLine("-------------Nachricht Test Block Ende-------------");
             */
-            #endregion 
+            #endregion
+
+            PeerData peer = new PeerData
+            {
+                serverAddresses = new List<IP>()
+            {
+                new IP("127.0.0.1", 13000)
+            },
+                tcpClientAddresses = new List<IP>()
+            {
+                new IP("127.0.0.1", 13003)
+            }
+            };
 
             TcpConnection tcpConnection = new TcpConnection();
-            tcpConnection.StartServersAndClients(serverAddresses, tcpClientAdresses);         
+            tcpConnection.StartServersAndClients(peer);
         }
         #region var def NachrichtenLogik
         const string PeerEntry = "PE";

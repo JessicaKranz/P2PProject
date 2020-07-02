@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -15,6 +16,10 @@ namespace Datenmodelle
         {
             this.address = _address;
             this.port = _port;
+        }
+        public string ToJson()
+        {
+            return JsonConvert.SerializeObject(this);
         }
     }
 }

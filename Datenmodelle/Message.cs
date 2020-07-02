@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.ComponentModel;
 using System.Linq;
 using System.Net;
@@ -6,6 +7,20 @@ using System.Xml.Schema;
 
 namespace Datenmodelle
 {
+    public class MessageData
+    {
+        public enum Types
+        {
+            Join
+        }
+        public Types Type { get; set; }
+        public int Ttl { get; set; }
+        public string ToJson()
+        {
+            return JsonConvert.SerializeObject(this);
+        }
+    }
+
     public class Message
     {
         /// <summary>

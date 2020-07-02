@@ -9,29 +9,34 @@ namespace PeerToPeerCloneC
 {
     class Program
     {
-        public static List<IP> serverAddresses = new List<IP>()
-        {
-            new IP("127.0.0.1", 13002),
-            //new IP("127.0.0.1", 13003)
-        };
-
-        static List<IP> tcpClientAdresses = new List<IP>()
-        {
-            //new IP("127.0.0.1", 13000),
-            new IP("127.0.0.1", 13001)
-        };
-
         static void Main(string[] args)
         {
+            PeerData peer = new PeerData
+            {
+                serverAddresses = new List<IP>()
+                {
+                    new IP("127.0.0.1", 13002),
+                    //new IP("127.0.0.1", 13003)
+                },
+                tcpClientAddresses = new List<IP>()
+                {
+                    //new IP("127.0.0.1", 13000),
+
+                    //known online peer
+                    new IP("127.0.0.1", 13001)
+                },
+            };
+            peer.tcpClient = new TcpClient(peer.tcpClientAddresses.FirstOrDefault().address, peer.tcpClientAddresses.FirstOrDefault().port);
+
+
             //JOIN
 
-            var entryPeer = new TcpClient(tcpClientAdresses.FirstOrDefault().address, tcpClientAdresses.FirstOrDefault().port);
-            //Start one threads that manages the connection to all communication partners
-            new Thread(o => TcpConnection.Join(entryPeer)).Start();
-
             TcpConnection tcpConnection = new TcpConnection();
+          
+            
+            new Thread(o => tcpConnection.Join(peer)).Start();
 
-            tcpConnection.StartServersAndClients(serverAddresses, tcpClientAdresses);
+            tcpConnection.StartServersAndClients(peer);
         }
     }
 }
