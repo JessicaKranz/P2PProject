@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -13,6 +14,7 @@ namespace CommonLogic
         List<TcpClient> tcpClients = new List<TcpClient>();
 
         bool go_on = true;
+        Random random = new Random();
 
         public void StartServersAndClients(PeerData peer)
         {
@@ -30,23 +32,27 @@ namespace CommonLogic
         }
 
 
-        public void Join(PeerData peer)
+        public void Join(IP OriginIp, IP IpToJoin)
         {
             MessageData messageData = new MessageData
             {
-                Type = MessageData.Types.Join,
+                Type = MessageData.Types.JoinRequest,
+                Destination = IpToJoin,
+                Source = OriginIp,
                 Ttl = 5
             };
 
             //stream readers can only process streams of known length
             string message = messageData.ToJson();
-            message = message.PadRight(128 + 4 - message.Length, '-');
+            var num = 128;
+            message = message.PadRight(num, '-');
 
             Byte[] data = System.Text.Encoding.ASCII.GetBytes(message);
 
             try
             {
-                NetworkStream stream = peer.tcpClient.GetStream();
+                TcpClient tcpClient = new TcpClient(messageData.Destination.address, messageData.Destination.port);
+                NetworkStream stream = tcpClient.GetStream();
 
                 // Send the message to the connected TcpServer.
                 stream.Write(data, 0, data.Length);
@@ -64,7 +70,7 @@ namespace CommonLogic
                 // Close everything.
                 //stream.Close();
                 //knownTcpClient.Close();
-                Console.WriteLine("Disconnected");
+                //Console.WriteLine("Disconnected");
             }
             catch (ArgumentNullException e)
             {
@@ -134,14 +140,8 @@ namespace CommonLogic
 
 
 
-        public void Server(PeerData peer, Int32 port)
+        public void Server(PeerData self, Int32 port)
         {
-            Console.WriteLine("Hello from the server");
-
-            // todo do better
-            string joinMessage = "Join";
-            joinMessage = joinMessage.PadRight(128 + 4 - joinMessage.Length, '-');
-
             TcpListener server = null;
             try
             {
@@ -183,23 +183,24 @@ namespace CommonLogic
                         try
                         {
                             MessageData message = JsonConvert.DeserializeObject<MessageData>(data.TrimEnd('-'));
-                            if (message.Type == MessageData.Types.Join)
+                            switch (message.Type)
                             {
-                                OnPeerJoin(peer, data, stream);
-                            }
-                            else
-                            {
-                                OnChatMessageReceived(data, stream);
+                                case MessageData.Types.JoinRequest:
+                                    OnPeerJoinRequest(self, message, stream);
+                                    break;
+                                case MessageData.Types.JoinResponse:
+                                    OnPeerJoinResponse();
+                                    break;
+                                default:
+                                    OnChatMessageReceived(data, stream);
+                                    break;
                             }
                         }
                         catch (Exception ex)
                         {
                             Console.WriteLine("Could not deserialize malformed message. Message was {0}. Failed with {1}", data, ex.Message);
-                        }
-                        
-                        
+                        }                                             
                     }
-
                     // Shutdown and end connection
                     client.Close();
                 }
@@ -218,25 +219,44 @@ namespace CommonLogic
             Console.Read();
         }
 
-
-        public void OnPeerJoin(PeerData peer, string data, NetworkStream stream)
+        private void OnPeerJoinResponse()
         {
-            // select one known neighbor or the own address and send it back
-            // ...
+            throw new NotImplementedException();
+        }
 
+        public void OnPeerJoinRequest(PeerData self, MessageData message, NetworkStream stream)
+        {
             //if peer has no neighbors, it'll transmits its own address
-            if(peer.tcpClientAddresses.Count == 0)
+            if (self.tcpClientAddresses.Count == 0)
             {
-                byte[] msg = System.Text.Encoding.ASCII.GetBytes(peer.serverAddresses[0].ToJson());
+                string send = self.serverAddresses[0].ToJson();
+                //stream readers can only process streams of known length
+                send = send.PadRight(128, '-');
+
+                byte[] msg = System.Text.Encoding.ASCII.GetBytes(send);
 
                 // Send back a response.
                 stream.Write(msg, 0, msg.Length);
-                data = System.Text.Encoding.ASCII.GetString(msg, 0, msg.Length);
+                string data = System.Text.Encoding.ASCII.GetString(msg, 0, msg.Length);
 
                 Console.WriteLine("Sent: {0}", data);
             }
-            //else
-            //send back an IPEndPoint as next Peer to contact
+            else
+            {
+                // select one known neighbor and send it back
+                // ...
+                if (message.Ttl > 0)
+                {
+                    message.Ttl--;
+                    // todo does the clients neighbor have an open port to speak with us?
+                    var nextRandomWalkStep = self.tcpClientAddresses.ElementAt(random.Next(self.tcpClientAddresses.Count));
+                    Join(message.Source, nextRandomWalkStep);
+                }
+                else
+                {
+
+                }
+            }            
         }    
         
         public void OnChatMessageReceived(string data, NetworkStream stream)

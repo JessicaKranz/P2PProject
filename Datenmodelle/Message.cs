@@ -1,9 +1,6 @@
 ﻿using Newtonsoft.Json;
 using System;
-using System.ComponentModel;
-using System.Linq;
 using System.Net;
-using System.Xml.Schema;
 
 namespace Datenmodelle
 {
@@ -11,10 +8,13 @@ namespace Datenmodelle
     {
         public enum Types
         {
-            Join
+            JoinRequest,
+            JoinResponse
         }
         public Types Type { get; set; }
         public int Ttl { get; set; }
+        public IP Destination { get; set; }
+        public IP Source { get; set; }
         public string ToJson()
         {
             return JsonConvert.SerializeObject(this);

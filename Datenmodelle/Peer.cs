@@ -9,7 +9,7 @@ namespace Datenmodelle
     {
         public List<IP> serverAddresses { get; set; }
         public List<IP> tcpClientAddresses { get; set; }
-        public TcpClient tcpClient { get; set; }
+        //public TcpClient tcpClient { get; set; }
     }
 
     public class Peer

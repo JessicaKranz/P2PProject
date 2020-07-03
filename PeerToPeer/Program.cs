@@ -26,7 +26,7 @@ namespace PeerToPeerCloneC
                     new IP("127.0.0.1", 13001)
                 },
             };
-            peer.tcpClient = new TcpClient(peer.tcpClientAddresses.FirstOrDefault().address, peer.tcpClientAddresses.FirstOrDefault().port);
+            //peer.tcpClient = new TcpClient(peer.tcpClientAddresses.FirstOrDefault().address, peer.tcpClientAddresses.FirstOrDefault().port);
 
 
             //JOIN
@@ -34,7 +34,7 @@ namespace PeerToPeerCloneC
             TcpConnection tcpConnection = new TcpConnection();
           
             
-            new Thread(o => tcpConnection.Join(peer)).Start();
+            new Thread(o => tcpConnection.Join(peer.serverAddresses[0], peer.tcpClientAddresses.FirstOrDefault())).Start();
 
             tcpConnection.StartServersAndClients(peer);
         }
