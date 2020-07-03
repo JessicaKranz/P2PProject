@@ -361,3 +361,5 @@ FodyWeavers.xsd
 
 #edit Jessi
 storage.*
+v16\Server\sqlite3
+.vs\*
