@@ -107,13 +107,14 @@ namespace PeerToPeerCloneA
             PeerData peer = new PeerData
             {
                 serverAddresses = new List<IP>()
-            {
-                new IP("127.0.0.1", 13000)
-            },
+                {
+                    new IP("127.0.0.1", 13000)
+                },
                 tcpClientAddresses = new List<IP>()
-            {
-                new IP("127.0.0.1", 13003)
-            }
+                {
+                    new IP("127.0.0.1", 13300)
+                },
+                requestAddress = new IP("127.0.0.1", 13000)
             };
 
             TcpConnection tcpConnection = new TcpConnection();

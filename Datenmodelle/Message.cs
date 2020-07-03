@@ -30,15 +30,15 @@ namespace Datenmodelle
         /// <summary>
         /// EntryPeer and JoinPeer use TTLs differently
         /// </summary>
-        public int Ttl { get; set; }                       
+        public int Ttl { get; set; }
         /// <summary>
         /// target ID
         /// </summary>
-        public int DestinationId { get; set; } 
+        public int DestinationId { get; set; }
         /// <summary>
         /// senders ID
         /// </summary>
-        public int SourceId { get; set; }          
+        public int SourceId { get; set; }
         /// <summary>
         /// senders name
         /// </summary>
@@ -54,21 +54,22 @@ namespace Datenmodelle
         /// <summary>
         /// TimeStamp of when the Message was Sent
         /// </summary>
-        public DateTime TimeStamp { get; set; }  
+        public DateTime TimeStamp { get; set; }
         /// <summary>
         /// A fish that is passed around in the network, to approximate the number of Peers connected.
         /// </summary>
-        public Fish Fish { get; set; } 
+        public Fish Fish { get; set; }
         /// <summary>
         /// IP Address from the Sender of the Original Message
         /// </summary>
-        public IPAddress SendersIP { get; set; } 
+        public IPAddress SendersIP { get; set; }
         /// <summary>
         /// The Number of neighbours a joining Peer to the Overlay wants to have.
         /// </summary>
         public int WishedNeighbours { get; set; }
- 
-        public Message(){
+
+        public Message()
+        {
             TimeStamp = DateTime.Now;
         }
 

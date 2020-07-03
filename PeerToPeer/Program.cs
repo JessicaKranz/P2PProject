@@ -1,5 +1,6 @@
 ﻿using CommonLogic;
 using Datenmodelle;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
@@ -15,27 +16,30 @@ namespace PeerToPeerCloneC
             {
                 serverAddresses = new List<IP>()
                 {
-                    new IP("127.0.0.1", 13002),
+                    new IP("127.0.0.1", 13200),
                     //new IP("127.0.0.1", 13003)
                 },
                 tcpClientAddresses = new List<IP>()
                 {
-                    //new IP("127.0.0.1", 13000),
 
-                    //known online peer
-                    new IP("127.0.0.1", 13001)
+                },
+                requestAddress = new IP("127.0.0.1", 13200),
+                knownStablePeers = new List<IP>()
+                {
+                    new IP("127.0.0.1", 13100)
                 },
             };
-            //peer.tcpClient = new TcpClient(peer.tcpClientAddresses.FirstOrDefault().address, peer.tcpClientAddresses.FirstOrDefault().port);
 
-
-            //JOIN
+            Random random = new Random();
 
             TcpConnection tcpConnection = new TcpConnection();
-          
-            
-            new Thread(o => tcpConnection.Join(peer.serverAddresses[0], peer.tcpClientAddresses.FirstOrDefault())).Start();
-
+            //JOIN
+            //peer is not inside the network
+            if (peer.tcpClientAddresses.Count == 0)
+            {
+                var selectedStablePeer = peer.knownStablePeers.ElementAt(random.Next(peer.knownStablePeers.Count));
+                new Thread(o => tcpConnection.Join(peer.GetNextFreePort(), selectedStablePeer)).Start();
+            }
             tcpConnection.StartServersAndClients(peer);
         }
     }

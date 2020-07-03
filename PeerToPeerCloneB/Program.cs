@@ -12,12 +12,13 @@ namespace PeerToPeerCloneB
             {
                 serverAddresses = new List<IP>()
                 {
-                    new IP("127.0.0.1", 13001)
+                    new IP("127.0.0.1", 13100)
                 },
                 tcpClientAddresses = new List<IP>()
                 {
-                    //new IP("127.0.0.1", 13002)
-                }
+                    
+                },             
+                requestAddress = new IP("127.0.0.1", 13100)
             };
 
             TcpConnection tcpConnection = new TcpConnection();
