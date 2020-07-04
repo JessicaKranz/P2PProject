@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Reflection;
 using System.Threading;
 
 namespace CommonLogic
@@ -226,14 +227,28 @@ namespace CommonLogic
 
         public void OnPeerJoinRequest(PeerData self, MessageData message, NetworkStream stream)
         {
+
+           
+
+            MessageData messageData = new MessageData
+            {
+                Type = MessageData.Types.JoinResponse,
+                Destination = message.Source,
+                Source = self.GetNextFreePort()
+        };
+
+
+
             //if peer has no neighbors, it'll transmits its own address
             if (self.tcpClientAddresses.Count == 0)
             {
-                string send = self.serverAddresses[0].ToJson();
-                //stream readers can only process streams of known length
-                send = send.PadRight(128, '-');
 
-                byte[] msg = System.Text.Encoding.ASCII.GetBytes(send);
+                //stream readers can only process streams of known length
+                string send = messageData.ToJson();
+                var num = 128;
+                send = send.PadRight(num, '-');
+
+                Byte[] msg = System.Text.Encoding.ASCII.GetBytes(send);
 
                 // Send back a response.
                 stream.Write(msg, 0, msg.Length);
