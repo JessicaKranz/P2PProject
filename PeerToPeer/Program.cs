@@ -1,4 +1,4 @@
-﻿using CommonLogic;
+﻿using BusinessLogic;
 using Datenmodelle;
 using System;
 using System.Collections.Generic;
@@ -12,7 +12,7 @@ namespace PeerToPeerCloneC
     {
         static void Main(string[] args)
         {
-            PeerData peer = new PeerData
+            MyPeerData peer = new MyPeerData
             {
                 serverAddresses = new List<IP>()
                 {

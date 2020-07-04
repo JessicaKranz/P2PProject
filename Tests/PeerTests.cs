@@ -7,15 +7,15 @@ namespace Tests
 {
     public class PeerTests
     {
-        PeerData peer1;
-        PeerData peer2;
-        PeerData peer3;
-        PeerData peer4;
+        MyPeerData peer1;
+        MyPeerData peer2;
+        MyPeerData peer3;
+        MyPeerData peer4;
 
         [SetUp]
         public void Setup()
         {
-            peer1 = new PeerData
+            peer1 = new MyPeerData
             {
                 serverAddresses = new List<IP>()
             {
@@ -24,7 +24,7 @@ namespace Tests
                 requestAddress = new IP("127.0.0.1", 13000)
             };
 
-            peer2 = new PeerData
+            peer2 = new MyPeerData
             {
                 serverAddresses = new List<IP>()
             {
@@ -39,7 +39,7 @@ namespace Tests
                 requestAddress = new IP("127.0.0.1", 13100)
             };
 
-            peer3 = new PeerData
+            peer3 = new MyPeerData
             {
                 serverAddresses = new List<IP>()
             {
@@ -52,7 +52,7 @@ namespace Tests
                 requestAddress = new IP("127.0.0.1", 13200)
             };
 
-            peer4 = new PeerData
+            peer4 = new MyPeerData
             {
                 serverAddresses = new List<IP>() { },
             };
