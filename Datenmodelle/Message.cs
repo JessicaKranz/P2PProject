@@ -4,31 +4,29 @@ using System.Net;
 
 namespace Datenmodelle
 {
-    public class MessageData
+    public class Message
     {
         public enum Types
         {
+            PeerEntry,
+            PeerJoin,
+            PersonalMessage,
+            GroupMessage,
+            FishTank,
+            WannabeNeighbour,
+
+            //These Are Jessies
             JoinRequest,
             JoinResponse
         }
-        public Types Type { get; set; }
-        public int Ttl { get; set; }
-        public IP Destination { get; set; }
-        public IP Source { get; set; }
-        public string ToJson()
-        {
-            return JsonConvert.SerializeObject(this);
-        }
-    }
-
-    public class Message
-    {
         /// <summary>
-        /// Type of Message is a two character long string, That is used to help sort and process Messages
+        /// Type of Message characterizes each Message
         /// </summary>
-        public string Type { get; set; }
+        public Types Type { get; set; }
+        public IP Destination { get; set; } //I Question These
+        public IP Source { get; set; }      // I want to bargain about this
         /// <summary>
-        /// EntryPeer and JoinPeer use TTLs differently
+        /// 
         /// </summary>
         public int Ttl { get; set; }
         /// <summary>
@@ -72,6 +70,9 @@ namespace Datenmodelle
         {
             TimeStamp = DateTime.Now;
         }
-
+        public string ToJson()
+        {
+            return JsonConvert.SerializeObject(this);
+        }
     }
 }

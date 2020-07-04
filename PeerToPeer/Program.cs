@@ -1,4 +1,4 @@
-﻿using CommonLogic;
+﻿using BusinessLogic;
 using Datenmodelle;
 using System;
 using System.Collections.Generic;
@@ -12,7 +12,7 @@ namespace PeerToPeerCloneC
     {
         static void Main(string[] args)
         {
-            PeerData peer = new PeerData
+            MyPeerData self = new MyPeerData
             {
                 serverAddresses = new List<IP>()
                 {
@@ -35,12 +35,12 @@ namespace PeerToPeerCloneC
             TcpConnection tcpConnection = new TcpConnection();
             //JOIN
             //peer is not inside the network
-            if (peer.tcpClientAddresses.Count == 0)
+            if (self.tcpClientAddresses.Count == 0)
             {
-                var selectedStablePeer = peer.knownStablePeers.ElementAt(random.Next(peer.knownStablePeers.Count));
-                new Thread(o => tcpConnection.Join(peer.GetNextFreePort(), selectedStablePeer)).Start();
+                var selectedStablePeer = self.knownStablePeers.ElementAt(random.Next(self.knownStablePeers.Count));
+                new Thread(o => tcpConnection.Join(self, self.GetNextFreePort(), selectedStablePeer)).Start();
             }
-            tcpConnection.StartServersAndClients(peer);
+            tcpConnection.StartServersAndClients(self);
         }
     }
 }

@@ -7,25 +7,12 @@ namespace Datenmodelle
 {
     public class Connection
     {
-        public Peer partnerPeer;
-        public IPAddress partnerIPAddress;
-        int partnerPortNr;
+        public Peer partnerPeer { get; set; }
+        public IPAddress partnerIPAddress{get;set;}
+        public int partnerPortNr {get;set;}
 
-        Peer mySelf;
-        IPAddress myIPAddress;
-        int myPortNr;
+        public int myPortNr {get;set;} // Maybe Not neccesary TODO CHECK
 
-        //Maybe have Servers Running? Inhere in connections? Maybe Have Server datenstrucktur, die solche funktionalitäten übernimmt?
 
-        public Connection(Peer partnerPeer, IPAddress partnerIPAddress, int partnerPortNr, Peer mySelf, IPAddress myIPAddress, int myPortNr)
-        {
-            this.partnerPeer = partnerPeer;
-            this.partnerIPAddress = partnerIPAddress;
-            this.partnerPortNr = partnerPortNr;
-
-            this.mySelf = mySelf;
-            this.myIPAddress = myIPAddress;
-            this.myPortNr = myPortNr;
-        }
     }
 }
