@@ -1,6 +1,8 @@
 ﻿using Datenmodelle;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -9,32 +11,87 @@ namespace CommonLogic
 {
     public class TcpConnection
     {
-        static List<TcpClient> tcpClients = new List<TcpClient>();
+        List<TcpClient> tcpClients = new List<TcpClient>();
 
-        static bool go_on = true;
+        bool go_on = true;
+        Random random = new Random();
 
-        public void StartServersAndClients(List<IP> serverAddresses, List<IP> tcpClientAdresses)
+        public void StartServersAndClients(PeerData peer)
         {
             //Start all servers in separate threads
-            serverAddresses.ForEach(address => new Thread(o => TcpConnection.Server(address.port)).Start());
+            peer.serverAddresses.ForEach(address => new Thread(o => this.Server(peer, address.port)).Start());
+            peer.serverAddresses.ForEach(address => Console.WriteLine("Started serving on {0}:{1}", "127.0.0.1", address.port));
 
             //Servers must be running before clients may connect
             Thread.Sleep(1000);
 
             //Create all tcpClients
-            tcpClientAdresses.ForEach(address => tcpClients.Add(new TcpClient(address.address, address.port)));
+            peer.tcpClientAddresses.ForEach(address => tcpClients.Add(new TcpClient(address.address, address.port)));
             //Start one threads that manages the connection to all communication partners
-            new Thread(o => TcpConnection.Client(tcpClients)).Start();
+            new Thread(o => this.Client(tcpClients)).Start();
         }
 
-        public static void Client(List<TcpClient> clients)
+
+        public void Join(IP OriginIp, IP IpToJoin)
+        {
+            MessageData messageData = new MessageData
+            {
+                Type = MessageData.Types.JoinRequest,
+                Destination = IpToJoin,
+                Source = OriginIp,
+                Ttl = 5
+            };
+
+            //stream readers can only process streams of known length
+            string message = messageData.ToJson();
+            var num = 128;
+            message = message.PadRight(num, '-');
+
+            Byte[] data = System.Text.Encoding.ASCII.GetBytes(message);
+
+            try
+            {
+                TcpClient tcpClient = new TcpClient(messageData.Destination.address, messageData.Destination.port);
+                NetworkStream stream = tcpClient.GetStream();
+
+                // Send the message to the connected TcpServer.
+                stream.Write(data, 0, data.Length);
+
+                // Receive the TcpServer.response.
+
+                // String to store the response ASCII representation.
+                String responseData = String.Empty;
+
+                // Read the first batch of the TcpServer response bytes.
+                Int32 bytes = stream.Read(data, 0, data.Length);
+                responseData = System.Text.Encoding.ASCII.GetString(data, 0, data.Length);
+                Console.WriteLine("Received: {0}", responseData);
+
+                // Close everything.
+                //stream.Close();
+                //knownTcpClient.Close();
+                //Console.WriteLine("Disconnected");
+            }
+            catch (ArgumentNullException e)
+            {
+                Console.WriteLine("ArgumentNullException: {0}", e);
+            }
+            catch (SocketException e)
+            {
+                Console.WriteLine("SocketException: {0}", e);
+            }
+        }
+
+        public void Client(List<TcpClient> clients)
         {
             while (go_on)
             {
                 Thread.Sleep(300);
                 string line = Console.ReadLine();
                 if (line.Length != 0)
-                {
+                {                 
+                    //stream readers can only process streams of known length
+                    line = line.PadRight(128 + 4 - line.Length, ' ');
 
                     Byte[] data = System.Text.Encoding.ASCII.GetBytes(line);
 
@@ -83,9 +140,8 @@ namespace CommonLogic
 
 
 
-        public static void Server(Int32 port)
+        public void Server(PeerData self, Int32 port)
         {
-            Console.WriteLine("Hello from the server");
             TcpListener server = null;
             try
             {
@@ -124,17 +180,27 @@ namespace CommonLogic
                         // Translate data bytes to a ASCII string.
                         data = System.Text.Encoding.ASCII.GetString(bytes, 0, i);
                         Console.WriteLine("Received: {0}", data);
-
-                        // Process the data sent by the client.
-                        data = data.ToUpper();
-
-                        byte[] msg = System.Text.Encoding.ASCII.GetBytes(data);
-
-                        // Send back a response.
-                        stream.Write(msg, 0, msg.Length);
-                        //Console.WriteLine("Sent: {0}", data);
+                        try
+                        {
+                            MessageData message = JsonConvert.DeserializeObject<MessageData>(data.TrimEnd('-'));
+                            switch (message.Type)
+                            {
+                                case MessageData.Types.JoinRequest:
+                                    OnPeerJoinRequest(self, message, stream);
+                                    break;
+                                case MessageData.Types.JoinResponse:
+                                    OnPeerJoinResponse();
+                                    break;
+                                default:
+                                    OnChatMessageReceived(data, stream);
+                                    break;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine("Could not deserialize malformed message. Message was {0}. Failed with {1}", data, ex.Message);
+                        }                                             
                     }
-
                     // Shutdown and end connection
                     client.Close();
                 }
@@ -153,5 +219,55 @@ namespace CommonLogic
             Console.Read();
         }
 
+        private void OnPeerJoinResponse()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void OnPeerJoinRequest(PeerData self, MessageData message, NetworkStream stream)
+        {
+            //if peer has no neighbors, it'll transmits its own address
+            if (self.tcpClientAddresses.Count == 0)
+            {
+                string send = self.serverAddresses[0].ToJson();
+                //stream readers can only process streams of known length
+                send = send.PadRight(128, '-');
+
+                byte[] msg = System.Text.Encoding.ASCII.GetBytes(send);
+
+                // Send back a response.
+                stream.Write(msg, 0, msg.Length);
+                string data = System.Text.Encoding.ASCII.GetString(msg, 0, msg.Length);
+
+                Console.WriteLine("Sent: {0}", data);
+            }
+            else
+            {
+                // select one known neighbor and send it back
+                // ...
+                if (message.Ttl > 0)
+                {
+                    message.Ttl--;
+                    // todo does the clients neighbor have an open port to speak with us?
+                    var nextRandomWalkStep = self.tcpClientAddresses.ElementAt(random.Next(self.tcpClientAddresses.Count));
+                    Join(message.Source, nextRandomWalkStep);
+                }
+                else
+                {
+
+                }
+            }            
+        }    
+        
+        public void OnChatMessageReceived(string data, NetworkStream stream)
+        {
+            // Process the data sent by the client.
+            data = data.ToUpper();
+
+            byte[] msg = System.Text.Encoding.ASCII.GetBytes(data);
+            // Send back a response.
+            stream.Write(msg, 0, msg.Length);
+            Console.WriteLine("Sent: {0}", data);
+        }
     }
 }

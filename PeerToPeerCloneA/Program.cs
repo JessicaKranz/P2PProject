@@ -2,10 +2,8 @@
 using Datenmodelle;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Net;
-using System.Net.Mail;
 using System.Net.Sockets;
 using System.Timers;
 
@@ -13,23 +11,13 @@ namespace PeerToPeerCloneA
 {
     class Program
     {
-        public static List<IP> serverAddresses = new List<IP>()
-        {
-            new IP("127.0.0.1", 13000)
-        };
-
-        static List<IP> tcpClientAdresses = new List<IP>()
-        {
-            new IP("127.0.0.1", 13003)
-        };
-
         #region vardef
         private static Random rand = new Random();
         private static Fish myFish = new Fish(rand.Next(), rand.NextDouble());
         private static System.Timers.Timer myFishTimer;
         private static int wunschAnzahlNachbarn;
-        private static int myPeerID = rand.Next(1 * (int)Math.Pow(10, 7), 1 * (int)Math.Pow(10, 8) - 1); //Erzeugt Zahlenzwischen 10.000.000 und 99.999.999
-        private static string myName = myPeerID.ToString();
+        private static int peerID = rand.Next(1 * (int)Math.Pow(10, 7), 1 * (int)Math.Pow(10, 8) - 1); //Erzeugt Zahlenzwischen 10.000.000 und 99.999.999
+        private static string myName = peerID.ToString();
         private static List<Peer> bekanntePeers;    //TODO Liste wo bekannte Peers als Peers  abgespeichert sind. GRUNDSATZFRAGE: brauchen wir das?
         private static List<Connection> neighbours;  //TODO Liste wo die Nachbarn abgespeichert sind. Als Connection. Mit jeweils eigenem und gegenteiligem Peer object (brauch man das?) , ipAddresse und PortNummber
         private static IPAddress myIPAddress = GetLocalIPAddress();     //Meine IP Addresse
@@ -114,41 +102,54 @@ namespace PeerToPeerCloneA
             ProzessNachricht(nachricht);
             Console.WriteLine("-------------Nachricht Test Block Ende-------------");
             */
-            #endregion 
+            #endregion
+
+            PeerData peer = new PeerData
+            {
+                serverAddresses = new List<IP>()
+                {
+                    new IP("127.0.0.1", 13000)
+                },
+                tcpClientAddresses = new List<IP>()
+                {
+                    new IP("127.0.0.1", 13300)
+                },
+                requestAddress = new IP("127.0.0.1", 13000)
+            };
 
             TcpConnection tcpConnection = new TcpConnection();
-            tcpConnection.StartServersAndClients(serverAddresses, tcpClientAdresses);         
+            tcpConnection.StartServersAndClients(peer);
         }
         #region var def NachrichtenLogik
-        const string PeerEntry = "PE";                                   
+        const string PeerEntry = "PE";
         const string PeerJoin = "PJ";
         const string PersonalMessage = "PM";
         const string GroupMessage = "GM";
         const string FishTank = "FT";
         const string WannabeNeighbour = "WN";
- 
+
         //const string 
 
 
         #endregion
         #region EingehendeNachrichtenLogik 
-        //Für Jessi zum einklappen :), damit sie nicht scrollen muss
         /*Hier passiert die Logic eines Peers. Hier steht was er bei welchem Nachrichtentyp Macht etc*/
         private static void ProzessNachricht(Message n)
         {
             //TODO entweder hier oder woanders: Check ob man diese Nachricht schonmal gesehn hat über n.Timestamp und n.origin, n.destination. Man braucht dafür ne Liste.
-            if(null != bekanntePeers.Where(x => x.GetPeerID() == n.SourceId && x.GetAssociatedName() == n.AuthorName)){
+            if (null != bekanntePeers.Where(x => x.GetPeerID() == n.SourceId && x.GetAssociatedName() == n.AuthorName))
+            {
                 bekanntePeers.Add(new Peer(n.SourceId, n.AuthorName));
             }
-            else if(null != bekanntePeers.Where(x => x.GetPeerID() == n.SourceId))
+            else if (null != bekanntePeers.Where(x => x.GetPeerID() == n.SourceId))
             {
                 bekanntePeers.Find(x => x.GetPeerID() == n.SourceId).SetAssosiatedName(n.AuthorName);
             }
             else
             {
-                bekanntePeers.Find(x => x.GetPeerID() == n.SourceId && x.GetAssociatedName() == n.AuthorName).UpdateLastSeen(); 
+                bekanntePeers.Find(x => x.GetPeerID() == n.SourceId && x.GetAssociatedName() == n.AuthorName).UpdateLastSeen();
             }
-            
+
             switch (n.Type)
             {
                 case PeerEntry:
@@ -173,11 +174,11 @@ namespace PeerToPeerCloneA
         }
         static void IncommingPeerEntryMessage(Message n)
         {
-            n.Ttl=(int)(n.WishedNeighbours*3*(1+1/myFish.GetPortion()));          // Erzeuge eine TTL die Zukksessiv heruntergesetzt wird, damit es im Overlay keine Geisternachrichten gibt.
+            n.Ttl = (int)(n.WishedNeighbours * 3 * (1 + 1 / myFish.GetPortion()));          // Erzeuge eine TTL die Zukksessiv heruntergesetzt wird, damit es im Overlay keine Geisternachrichten gibt.
             if (WillIBecomeANewNeighbour())
             {
                 n.WishedNeighbours--;
-                ConnectTCP(n.SendersIP, new Peer(n.SourceId,n.AuthorName));                                            
+                ConnectTCP(n.SendersIP, new Peer(n.SourceId, n.AuthorName));
             }
             if (n.WishedNeighbours > 0 && n.Ttl > 0)
             {
@@ -189,7 +190,7 @@ namespace PeerToPeerCloneA
                     AuthorName = n.AuthorName,
                     SendersIP = n.SendersIP,
 
-                }) ;
+                });
             }
         }
 
@@ -197,7 +198,7 @@ namespace PeerToPeerCloneA
         {
             n.Ttl--;
 
-            if(null == neighbours.Where(x => x.partnerIPAddress == n.SendersIP))
+            if (null == neighbours.Where(x => x.partnerIPAddress == n.SendersIP))
             {
                 if (WillIBecomeANewNeighbour())
                 {
@@ -223,12 +224,12 @@ namespace PeerToPeerCloneA
         static void IncommingPersonalMessage(Message n)
         {
             n.Ttl--;
-            if (n.DestinationId == myPeerID)
+            if (n.DestinationId == peerID)
             {
                 //Maybe Find a better way to deliver
-                Console.WriteLine("["+n.TimeStamp+n.AuthorName+"] "+" wrote to you:"+n.ChatMessage);
+                Console.WriteLine("[" + n.TimeStamp + n.AuthorName + "] " + " wrote to you:" + n.ChatMessage);
             }
-            else if(null != neighbours.Where(x => x.partnerPeer.GetPeerID() == n.DestinationId))
+            else if (null != neighbours.Where(x => x.partnerPeer.GetPeerID() == n.DestinationId))
             {
                 SendMessage(n, neighbours.Where(x => x.partnerPeer.GetPeerID() == n.DestinationId).FirstOrDefault());
             }
@@ -244,7 +245,7 @@ namespace PeerToPeerCloneA
             if (myGroupChatsIDs.Contains(n.DestinationId))
             {
                 //Maybe Find a better way to deliver
-                Console.WriteLine("[" + n.TimeStamp + n.AuthorName + "] " + " wrote in \""+n.GroupChatName+"\":" + n.ChatMessage);
+                Console.WriteLine("[" + n.TimeStamp + n.AuthorName + "] " + " wrote in \"" + n.GroupChatName + "\":" + n.ChatMessage);
             }
             else
             {
@@ -264,16 +265,16 @@ namespace PeerToPeerCloneA
                 myFish.SetPortion(myFish.GetPortion() + n.Fish.GetPortion());
                 Reset(myFishTimer);
             }
-           
+
         }
-            
+
         #endregion
 
         #region Ausgehende Nachrichten Logik
         public static void SendPeerEntryMessage()
         {
             //FOR THIS WE DONT HAVE A CONNECTION YET? WHAT TO DO?
-            
+
             //SendMessage(new Message { },new Connection )
         }
 
@@ -283,7 +284,7 @@ namespace PeerToPeerCloneA
             SendMessageFloodOverlay(new Message
             {
                 Fish = myFish,
-                SourceId = myPeerID,
+                SourceId = peerID,
                 AuthorName = myName,
             });
         }
@@ -296,7 +297,7 @@ namespace PeerToPeerCloneA
                 Ttl = 7, //(int)(3 * (1 + 1 / myFish.GetPortion())), //TODO CHECK IF PMS REACH DESTINATION. OTHERWISE MAKE TTL HIGHER Maybe the given Algorithm will work
                 AuthorName = myName,
                 DestinationId = destinationID,
-                SourceId = myPeerID,
+                SourceId = peerID,
                 ChatMessage = PM,
             });
         }
@@ -359,7 +360,7 @@ namespace PeerToPeerCloneA
             Console.WriteLine("Ich verbinde mich jetzt mit \"" + ipAdresse + "\"! (In wirklichkeit tue ich das noch nicht. Das kommt aber noch.");
             int neigboursPortHeUsesToTalkToMe = 666; // TODO OR TODELETE FROM CONNECTION DATENMODELL
             int myPortIUseToTalkWithHim = 666;       // TODO OR TODELETE FROM CONNECTION DATENMODELL
-            neighbours.Add(new Connection(newNeighbour, ipAdresse, neigboursPortHeUsesToTalkToMe, new Peer(myPeerID, myName), myIPAddress, myPortIUseToTalkWithHim));
+            neighbours.Add(new Connection(newNeighbour, ipAdresse, neigboursPortHeUsesToTalkToMe, new Peer(peerID, myName), myIPAddress, myPortIUseToTalkWithHim));
             //TODO stelle verbindung mit dem Peer an folgender Ip.Adresse her. Fordere dafür alle informationen an die du brauchst. 
         }
         static Boolean WillIBecomeANewNeighbour()

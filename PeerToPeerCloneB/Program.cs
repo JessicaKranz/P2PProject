@@ -2,24 +2,27 @@
 using Datenmodelle;
 using System.Collections.Generic;
 
-namespace PeerToPeerCloneA
+namespace PeerToPeerCloneB
 {
     class Program
-    {       
-        public static List<IP> serverAddresses = new List<IP>()
-        {
-            new IP("127.0.0.1", 13001)
-        };
-
-        static List<IP> tcpClientAdresses = new List<IP>()
-        {
-            new IP("127.0.0.1", 13002)
-        };
-   
+    {
         static void Main(string[] args)
         {
+            PeerData peer = new PeerData
+            {
+                serverAddresses = new List<IP>()
+                {
+                    new IP("127.0.0.1", 13100)
+                },
+                tcpClientAddresses = new List<IP>()
+                {
+                    
+                },             
+                requestAddress = new IP("127.0.0.1", 13100)
+            };
+
             TcpConnection tcpConnection = new TcpConnection();
-            tcpConnection.StartServersAndClients(serverAddresses, tcpClientAdresses);
+            tcpConnection.StartServersAndClients(peer);
         }
     }
 }
