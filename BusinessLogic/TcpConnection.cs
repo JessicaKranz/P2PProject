@@ -12,42 +12,43 @@ namespace BusinessLogic
 {
     public class TcpConnection
     {
+        const int MESSAGE_MAX_LENGTH = 2048;
 
         List<TcpClient> tcpClients = new List<TcpClient>();
 
         bool go_on = true;
         Random random = new Random();
 
-        public void StartServersAndClients(MyPeerData peer)
+        public void StartServersAndClients(MyPeerData self)
         {
             //Start all servers in separate threads
-            peer.serverAddresses.ForEach(address => new Thread(o => this.Server(peer, address.port)).Start());
-            peer.serverAddresses.ForEach(address => Console.WriteLine("Started serving on {0}:{1}", "127.0.0.1", address.port));
+            self.serverAddresses.ForEach(address => new Thread(o => this.Server(self, address.port)).Start());
+            self.serverAddresses.ForEach(address => Console.WriteLine("Started serving on {0}:{1}", "127.0.0.1", address.port));
 
             //Servers must be running before clients may connect
             Thread.Sleep(1000);
 
             //Create all tcpClients
-            peer.tcpClientAddresses.ForEach(address => tcpClients.Add(new TcpClient(address.address, address.port)));
+            self.tcpClientAddresses.ForEach(address => tcpClients.Add(new TcpClient(address.address, address.port)));
             //Start one threads that manages the connection to all communication partners
             new Thread(o => this.Client(tcpClients)).Start();
         }
 
 
-        public void Join(IP OriginIp, IP IpToJoin)
+        public void Join(MyPeerData self, IP OriginIp, IP IpToJoin)
         {
             Message messageData = new Message
             {
                 Type = Message.Types.JoinRequest,
                 Destination = IpToJoin,
                 Source = OriginIp,
+                SourceId = self.myPeerID,
                 Ttl = 5
             };
 
             //stream readers can only process streams of known length
             string message = messageData.ToJson();
-            var num = 128;
-            message = message.PadRight(num, '-');
+            message = message.PadRight(MESSAGE_MAX_LENGTH, '-');
 
             Byte[] data = System.Text.Encoding.ASCII.GetBytes(message);
 
@@ -94,7 +95,7 @@ namespace BusinessLogic
                 if (line.Length != 0)
                 {                 
                     //stream readers can only process streams of known length
-                    line = line.PadRight(128 + 4 - line.Length, ' ');
+                    line = line.PadRight(MESSAGE_MAX_LENGTH, ' ');
 
                     Byte[] data = System.Text.Encoding.ASCII.GetBytes(line);
 
@@ -157,7 +158,7 @@ namespace BusinessLogic
                 server.Start();
 
                 // Buffer for reading data
-                Byte[] bytes = new Byte[256];
+                Byte[] bytes = new Byte[MESSAGE_MAX_LENGTH];
                 String data = null;
 
                 // Enter the listening loop.
@@ -185,7 +186,8 @@ namespace BusinessLogic
                         Console.WriteLine("Received: {0}", data);
                         try
                         {
-                            ProzessNachricht(self, stream,data, JsonConvert.DeserializeObject<Message>(data.TrimEnd('-')));
+                            Message message = JsonConvert.DeserializeObject<Message>(data.TrimEnd('-'));
+                            ProzessNachricht(self, stream,data, message);
                         }
                         catch (Exception ex)
                         {
@@ -226,7 +228,7 @@ namespace BusinessLogic
             {
                 string send = self.serverAddresses[0].ToJson();
                 //stream readers can only process streams of known length
-                send = send.PadRight(128, '-');
+                send = send.PadRight(MESSAGE_MAX_LENGTH, '-');
 
                 byte[] msg = System.Text.Encoding.ASCII.GetBytes(send);
 
@@ -245,7 +247,7 @@ namespace BusinessLogic
                     message.Ttl--;
                     // todo does the clients neighbor have an open port to speak with us?
                     var nextRandomWalkStep = self.tcpClientAddresses.ElementAt(random.Next(self.tcpClientAddresses.Count));
-                    Join(message.Source, nextRandomWalkStep);
+                    Join(self, message.Source, nextRandomWalkStep);
                 }
                 else
                 {
@@ -275,7 +277,10 @@ namespace BusinessLogic
            
 
             //TODO entweder hier oder woanders: Check ob man diese Nachricht schonmal gesehn hat über n.Timestamp und n.origin, n.destination. Man braucht dafür ne Liste.
-            if (null != self.bekanntePeers.Where(x => x.peerID == n.SourceId && x.associatedName == n.AuthorName))
+
+            // Fügt bisher ungesehene Peers einer Liste hinzu
+            
+            if (!self.bekanntePeers.Any(x => x.peerID == n.SourceId && x.associatedName == n.AuthorName))  
             {
                 self.bekanntePeers.Add(new Peer(n.SourceId, n.AuthorName));
             }
@@ -288,7 +293,7 @@ namespace BusinessLogic
             {
                 self.bekanntePeers.Find(x => x.peerID == n.SourceId && x.associatedName == n.AuthorName).UpdateLastSeen();
             }
-
+            
             switch (n.Type)
             {
                 //Leos Cases
