@@ -82,13 +82,6 @@ namespace BusinessLogic
                 try
                 {
                     Message messageObj = JsonConvert.DeserializeObject<Message>(responseData.TrimEnd('-'));
-                    if(messageObj.Type == Message.Types.JoinResponse)
-                    {
-                        //// Close everything.
-                        //stream.Close();
-                        //tcpClient.Close();
-                        //Console.WriteLine("Disconnected");
-                    }
                     ProzessNachricht(self, stream, responseData, messageObj, tcpClient);
                 }
                 catch (Exception ex)
@@ -256,8 +249,9 @@ namespace BusinessLogic
             stream.Close();
             tcpClient.Close();
 
-            self.serverAddresses.Add(self.GetNextFreePort());
-            StartServersAndClients(self);
+            var nextPort = self.GetNextFreePort();
+            self.serverAddresses.Add(nextPort);
+            new Thread(o => this.Server(self, nextPort.port)).Start();
 
         }
 
@@ -284,6 +278,16 @@ namespace BusinessLogic
                 string data = System.Text.Encoding.ASCII.GetString(msg, 0, msg.Length);
 
                 Console.WriteLine("Sent: {0}", data);
+
+                self.serverAddresses.Add(messageData.Source);
+                new Thread(o => this.Server(self, messageData.Source.port)).Start();
+
+                //Create tcpClient
+                List<TcpClient> tcpClients = new List<TcpClient>(){
+                    new TcpClient(messageData.Destination.address, messageData.Destination.port)};
+
+                new Thread(o => this.Client(tcpClients)).Start();
+
             }
             else
             {
