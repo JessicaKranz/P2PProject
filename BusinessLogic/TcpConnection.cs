@@ -71,6 +71,16 @@ namespace BusinessLogic
                 responseData = System.Text.Encoding.ASCII.GetString(data, 0, data.Length);
                 Console.WriteLine("Received: {0}", responseData);
 
+                try
+                {
+                    Message messageObj = JsonConvert.DeserializeObject<Message>(responseData.TrimEnd('-'));
+                    ProzessNachricht(self, stream, responseData, messageObj);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Could not deserialize malformed message. Message was {0}. Failed with {1}", data, ex.Message);
+                }
+
                 // Close everything.
                 //stream.Close();
                 //knownTcpClient.Close();
@@ -219,7 +229,8 @@ namespace BusinessLogic
 
         private void OnPeerJoinResponse()
         {
-            throw new NotImplementedException();
+            Console.WriteLine("Called OnPeerJoinResponse");
+            //throw new NotImplementedException();
         }
 
         public void OnPeerJoinRequest(MyPeerData self, Message message, NetworkStream stream)
@@ -288,19 +299,19 @@ namespace BusinessLogic
 
             // Fügt bisher ungesehene Peers einer Liste hinzu
             
-            if (!self.bekanntePeers.Any(x => x.peerID == n.SourceId && x.associatedName == n.AuthorName))  
-            {
-                self.bekanntePeers.Add(new Peer(n.SourceId, n.AuthorName));
-            }
-            else if (null != self.bekanntePeers.Where(x => x.peerID == n.SourceId))
-            {
-                self.bekanntePeers.Find(x => x.peerID == n.SourceId).associatedName = n.AuthorName;
-                self.bekanntePeers.Find(x => x.peerID == n.SourceId && x.associatedName == n.AuthorName).UpdateLastSeen();
-            }
-            else
-            {
-                self.bekanntePeers.Find(x => x.peerID == n.SourceId && x.associatedName == n.AuthorName).UpdateLastSeen();
-            }
+            //if (!self.bekanntePeers.Any(x => x.peerID == n.SourceId && x.associatedName == n.AuthorName))  
+            //{
+            //    self.bekanntePeers.Add(new Peer(n.SourceId, n.AuthorName));
+            //}
+            //else if (null != self.bekanntePeers.Where(x => x.peerID == n.SourceId))
+            //{
+            //    self.bekanntePeers.Find(x => x.peerID == n.SourceId).associatedName = n.AuthorName;
+            //    self.bekanntePeers.Find(x => x.peerID == n.SourceId && x.associatedName == n.AuthorName).UpdateLastSeen();
+            //}
+            //else
+            //{
+            //    self.bekanntePeers.Find(x => x.peerID == n.SourceId && x.associatedName == n.AuthorName).UpdateLastSeen();
+            //}
             
             switch (n.Type)
             {
