@@ -7,6 +7,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Timers;
+using System.Reflection;
 
 namespace BusinessLogic
 {
@@ -223,14 +224,21 @@ namespace BusinessLogic
 
         public void OnPeerJoinRequest(MyPeerData self, Message message, NetworkStream stream)
         {
+            Message messageData = new Message
+            {
+                Type = Message.Types.JoinResponse,
+                Destination = message.Source,
+                Source = self.GetNextFreePort()
+            };
+
             //if peer has no neighbors, it'll transmits its own address
             if (self.tcpClientAddresses.Count == 0)
             {
-                string send = self.serverAddresses[0].ToJson();
                 //stream readers can only process streams of known length
+                string send = messageData.ToJson();
                 send = send.PadRight(MESSAGE_MAX_LENGTH, '-');
 
-                byte[] msg = System.Text.Encoding.ASCII.GetBytes(send);
+                Byte[] msg = System.Text.Encoding.ASCII.GetBytes(send);
 
                 // Send back a response.
                 stream.Write(msg, 0, msg.Length);
