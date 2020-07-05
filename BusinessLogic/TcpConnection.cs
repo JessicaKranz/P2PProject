@@ -13,7 +13,7 @@ namespace BusinessLogic
 {
     public class TcpConnection
     {
-        const int MESSAGE_MAX_LENGTH = 2048;
+        const int MESSAGE_MAX_LENGTH = 1024;
 
         List<TcpClient> tcpClients = new List<TcpClient>();
 
