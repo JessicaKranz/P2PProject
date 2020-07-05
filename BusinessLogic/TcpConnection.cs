@@ -22,17 +22,25 @@ namespace BusinessLogic
 
         public void StartServersAndClients(MyPeerData self)
         {
-            //Start all servers in separate threads
-            self.serverAddresses.ForEach(address => new Thread(o => this.Server(self, address.port)).Start());
-            self.serverAddresses.ForEach(address => Console.WriteLine("Started serving on {0}:{1}", "127.0.0.1", address.port));
+            try
+            {
+                //Start all servers in separate threads
+                self.serverAddresses.ForEach(address => new Thread(o => this.Server(self, address.port)).Start());
+                self.serverAddresses.ForEach(address => Console.WriteLine("Started serving on {0}:{1}", "127.0.0.1", address.port));
 
-            //Servers must be running before clients may connect
-            Thread.Sleep(1000);
+                //Servers must be running before clients may connect
+                Thread.Sleep(1000);
 
-            //Create all tcpClients
-            self.tcpClientAddresses.ForEach(address => tcpClients.Add(new TcpClient(address.address, address.port)));
-            //Start one threads that manages the connection to all communication partners
-            new Thread(o => this.Client(tcpClients)).Start();
+                //Create all tcpClients
+                self.tcpClientAddresses.ForEach(address => tcpClients.Add(new TcpClient(address.address, address.port)));
+                //Start one threads that manages the connection to all communication partners
+                new Thread(o => this.Client(tcpClients)).Start();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            
         }
 
 
@@ -74,7 +82,14 @@ namespace BusinessLogic
                 try
                 {
                     Message messageObj = JsonConvert.DeserializeObject<Message>(responseData.TrimEnd('-'));
-                    ProzessNachricht(self, stream, responseData, messageObj);
+                    if(messageObj.Type == Message.Types.JoinResponse)
+                    {
+                        //// Close everything.
+                        //stream.Close();
+                        //tcpClient.Close();
+                        //Console.WriteLine("Disconnected");
+                    }
+                    ProzessNachricht(self, stream, responseData, messageObj, tcpClient);
                 }
                 catch (Exception ex)
                 {
@@ -82,9 +97,9 @@ namespace BusinessLogic
                 }
 
                 // Close everything.
-                //stream.Close();
-                //knownTcpClient.Close();
-                //Console.WriteLine("Disconnected");
+                stream.Close();
+                tcpClient.Close();
+                Console.WriteLine("Disconnected");
             }
             catch (ArgumentNullException e)
             {
@@ -198,7 +213,13 @@ namespace BusinessLogic
                         try
                         {
                             Message message = JsonConvert.DeserializeObject<Message>(data.TrimEnd('-'));
-                            ProzessNachricht(self, stream,data, message);
+                            if(message.Type == Message.Types.JoinRequest)
+                            {
+                                stream.Close();
+                                client.Close();
+                                break;
+                            }
+                            ProzessNachricht(self, stream,data, message, client);
                         }
                         catch (Exception ex)
                         {
@@ -206,12 +227,13 @@ namespace BusinessLogic
                         }                                             
                     }
                     // Shutdown and end connection
-                    client.Close();
+                    //client.Close();
                 }
             }
             catch (SocketException e)
             {
                 Console.WriteLine("SocketException: {0}", e);
+                Console.WriteLine("\nFailed to create server on port {0}", port);
             }
             finally
             {
@@ -227,10 +249,16 @@ namespace BusinessLogic
 
 
 
-        private void OnPeerJoinResponse()
+        private void OnPeerJoinResponse(MyPeerData self, Message msg, NetworkStream stream, TcpClient tcpClient)
         {
             Console.WriteLine("Called OnPeerJoinResponse");
-            //throw new NotImplementedException();
+
+            stream.Close();
+            tcpClient.Close();
+
+            self.serverAddresses.Add(self.GetNextFreePort());
+            StartServersAndClients(self);
+
         }
 
         public void OnPeerJoinRequest(MyPeerData self, Message message, NetworkStream stream)
@@ -291,7 +319,7 @@ namespace BusinessLogic
 
         #region EingehendeNachrichtenLogik 
         /*Hier passiert die Logic eines Peers. Hier steht was er bei welchem Nachrichtentyp Macht etc*/
-        private void ProzessNachricht(MyPeerData self, NetworkStream stream, string data, Message n)
+        private void ProzessNachricht(MyPeerData self, NetworkStream stream, string data, Message n, TcpClient tcpClient)
         {
            
 
@@ -340,7 +368,7 @@ namespace BusinessLogic
                     OnPeerJoinRequest(self, n, stream);
                     break;
                 case Message.Types.JoinResponse:
-                    OnPeerJoinResponse();
+                    OnPeerJoinResponse(self, n, stream, tcpClient);
                     break;
                 default:
                     OnChatMessageReceived(data, stream);
