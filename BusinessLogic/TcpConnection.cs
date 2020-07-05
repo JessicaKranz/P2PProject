@@ -107,16 +107,31 @@ namespace BusinessLogic
 
         public void Client(List<TcpClient> clients)
         {
+
+          
             while (go_on)
             {
                 Thread.Sleep(300);
                 string line = Console.ReadLine();
                 if (line.Length != 0)
-                {                 
-                    //stream readers can only process streams of known length
-                    line = line.PadRight(MESSAGE_MAX_LENGTH, ' ');
+                {
 
-                    Byte[] data = System.Text.Encoding.ASCII.GetBytes(line);
+
+                    Message messageData = new Message
+                    {
+                        Type = Message.Types.PersonalMessage,
+                        ChatMessage = line
+                    };
+
+                    var message = messageData.ToJson();
+
+                    //stream readers can only process streams of known length
+
+                    message = message.PadRight(MESSAGE_MAX_LENGTH, ' ');
+
+                    Byte[] data = System.Text.Encoding.ASCII.GetBytes(message);
+
+
 
                     foreach (var client in clients)
                     {
@@ -213,6 +228,9 @@ namespace BusinessLogic
                                 break;
                             }
                             ProzessNachricht(self, stream,data, message, client);
+
+
+
                         }
                         catch (Exception ex)
                         {
@@ -253,6 +271,8 @@ namespace BusinessLogic
             self.serverAddresses.Add(nextPort);
             new Thread(o => this.Server(self, nextPort.port)).Start();
 
+           
+
         }
 
         public void OnPeerJoinRequest(MyPeerData self, Message message, NetworkStream stream)
@@ -262,8 +282,10 @@ namespace BusinessLogic
                 Type = Message.Types.JoinResponse,
                 Destination = message.Source,
                 Source = self.GetNextFreePort()
-            };
+              
 
+            };
+            
             //if peer has no neighbors, it'll transmits its own address
             if (self.tcpClientAddresses.Count == 0)
             {
@@ -311,11 +333,11 @@ namespace BusinessLogic
         {
             // Process the data sent by the client.
             data = data.ToUpper();
-
+            Console.WriteLine("\n Sent1: {0}", data);
             byte[] msg = System.Text.Encoding.ASCII.GetBytes(data);
             // Send back a response.
             stream.Write(msg, 0, msg.Length);
-            Console.WriteLine("Sent: {0}", data);
+            Console.WriteLine("\n Sent2: {0}", data);
         }
 
 
@@ -355,7 +377,7 @@ namespace BusinessLogic
                     IncommingPeerJoinMessage(self, n);
                     break;
                 case Message.Types.PersonalMessage:
-                    IncommingPersonalMessage(self, n);
+                    OnChatMessageReceived(data, stream);
                     break;
                 case Message.Types.GroupMessage:
                     IncommingGroupMessage(self, n);
@@ -427,6 +449,7 @@ namespace BusinessLogic
                 });
             }
         }
+
 
         static void IncommingPersonalMessage(MyPeerData self, Message n)
         {
