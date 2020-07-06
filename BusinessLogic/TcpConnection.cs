@@ -15,7 +15,7 @@ namespace BusinessLogic
     {
         const int MESSAGE_MAX_LENGTH = 1024;
 
-        List<TcpClient> tcpClients = new List<TcpClient>();
+        //List<TcpClient> tcpClients = new List<TcpClient>();
 
         bool go_on = true;
         Random random = new Random();
@@ -32,9 +32,9 @@ namespace BusinessLogic
                 Thread.Sleep(1000);
 
                 //Create all tcpClients
-                self.tcpClientAddresses.ForEach(address => tcpClients.Add(new TcpClient(address.address, address.port)));
+                self.tcpClientAddresses.ForEach(address => self.tcpClients.Add(new TcpClient(address.address, address.port)));
                 //Start one threads that manages the connection to all communication partners
-                new Thread(o => this.Client(tcpClients)).Start();
+                new Thread(o => this.Client(self.tcpClients)).Start();
             }
             catch (Exception ex)
             {
@@ -275,11 +275,10 @@ namespace BusinessLogic
             Thread.Sleep(1000);
 
             ////Create tcpClient
-            List<TcpClient> tcpClients = new List<TcpClient>(){
-                    new TcpClient(msg.Destination.address, msg.Destination.port)};
+            self.tcpClients.Add(new TcpClient(msg.Destination.address, msg.Destination.port));
             self.tcpClientAddresses.Add(new IP(msg.Destination.address, msg.Destination.port));
 
-            new Thread(o => this.Client(tcpClients)).Start();
+            new Thread(o => this.Client(self.tcpClients)).Start();
         }
 
         public void OnPeerJoinRequest(MyPeerData self, Message message, NetworkStream stream)
@@ -313,12 +312,10 @@ namespace BusinessLogic
                 Thread.Sleep(1000);
 
                 ////Create tcpClient
-                List<TcpClient> tcpClients = new List<TcpClient>(){
-                    new TcpClient(messageData.Destination.address, messageData.Destination.port)};
-
+                self.tcpClients.Add(new TcpClient(messageData.Destination.address, messageData.Destination.port));
                 self.tcpClientAddresses.Add(new IP(messageData.Destination.address, messageData.Destination.port));
 
-                new Thread(o => this.Client(tcpClients)).Start();
+                new Thread(o => this.Client(self.tcpClients)).Start();
 
             }
             else

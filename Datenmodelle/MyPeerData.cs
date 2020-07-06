@@ -23,6 +23,7 @@ namespace Datenmodelle
         public IP requestAddress { get; set; }
         public List<IP> serverAddresses { get; set; }
         public List<IP> tcpClientAddresses { get; set; }
+        public List<TcpClient> tcpClients { get; set; } = new List<TcpClient>();
         public List<IP> knownStablePeers { get; set; } = new List<IP>  //want to refactor into neigbours
         {
             new IP("127.0.0.1", 13000),
