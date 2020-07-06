@@ -8,7 +8,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Timers;
 
-namespace PeerToPeerCloneA
+namespace PeerToPeerCloneB
 {
     class Program
     {
