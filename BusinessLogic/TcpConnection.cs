@@ -352,13 +352,9 @@ namespace BusinessLogic
         
         public void OnChatMessageReceived(string data, NetworkStream stream)
         {
-            // Process the data sent by the client.
-            data = data.ToUpper();
-            //Console.WriteLine("\n Sent1: {0}", data);
             byte[] msg = System.Text.Encoding.ASCII.GetBytes(data);
             // Send back a response.
             stream.Write(msg, 0, msg.Length);
-            //Console.WriteLine("\n Sent2: {0}", data);
         }
 
 
