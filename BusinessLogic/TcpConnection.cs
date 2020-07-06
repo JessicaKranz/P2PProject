@@ -87,7 +87,7 @@ namespace BusinessLogic
                 // Read the first batch of the TcpServer response bytes.
                 Int32 bytes = stream.Read(data, 0, data.Length);
                 responseData = System.Text.Encoding.ASCII.GetString(data, 0, data.Length);
-                Console.WriteLine("Received: {0}", responseData);
+                Console.WriteLine("Received: {0}", responseData.TrimEnd('-'));
 
                 try
                 {
@@ -163,7 +163,7 @@ namespace BusinessLogic
                             // Read the first batch of the TcpServer response bytes.
                             Int32 bytes = stream.Read(data, 0, data.Length);
                             responseData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
-                            Console.WriteLine("Received: {0}", responseData);
+                            Console.WriteLine("Received: {0}", responseData.TrimEnd('-'));
 
                             //if (line.Equals("quit"))
                             //{
@@ -239,7 +239,7 @@ namespace BusinessLogic
                     {
                         // Translate data bytes to a ASCII string.
                         data = System.Text.Encoding.ASCII.GetString(bytes, 0, i);
-                        Console.WriteLine("Received: {0}", data);
+                        Console.WriteLine("Received: {0}", data.TrimEnd('-'));
                         try
                         {
                             Message message = JsonConvert.DeserializeObject<Message>(data.TrimEnd('-'));
@@ -320,7 +320,7 @@ namespace BusinessLogic
                 stream.Write(msg, 0, msg.Length);
                 string data = System.Text.Encoding.ASCII.GetString(msg, 0, msg.Length);
 
-                Console.WriteLine("Sent: {0}", data);              
+                Console.WriteLine("Sent: {0}", data.TrimEnd('-'));              
 
                 self.serverAddresses.Add(messageData.Source);
                 new Thread(o => this.Server(self, messageData.Source.port)).Start();
