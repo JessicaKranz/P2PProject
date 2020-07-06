@@ -94,7 +94,7 @@ namespace PeerToPeerCloneA
             {
                 serverAddresses = new List<IP>()
                 {
-                    new IP("127.0.0.1", 13000),
+                    new IP("127.0.0.1", 13300),
                     //new IP("127.0.0.1", 13003)
                 },
                 tcpClientAddresses = new List<IP>()
@@ -104,7 +104,8 @@ namespace PeerToPeerCloneA
                 requestAddress = new IP("127.0.0.1", 13000),
                 knownStablePeers = new List<IP>()
                 {
-                    new IP("127.0.0.1", 13100)
+                    new IP("127.0.0.1", 13100),
+                    new IP("127.0.0.1", 13200),
                 },
             };
 

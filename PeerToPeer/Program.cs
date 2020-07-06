@@ -26,7 +26,9 @@ namespace PeerToPeerCloneC
                 requestAddress = new IP("127.0.0.1", 13200),
                 knownStablePeers = new List<IP>()
                 {
-                    new IP("127.0.0.1", 13100)
+                    new IP("127.0.0.1", 13100),
+                    new IP("127.0.0.1", 13300),
+
                 },
             };
 
