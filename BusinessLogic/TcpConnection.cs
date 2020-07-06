@@ -55,9 +55,7 @@ namespace BusinessLogic
                 Ttl = 5
             };
 
-            //stream readers can only process streams of known length
-            string message = messageData.ToJson();
-            message = message.PadRight(MESSAGE_MAX_LENGTH, '-');
+            string message = FillSpace(messageData);
 
             Byte[] data = System.Text.Encoding.ASCII.GetBytes(message);
 
@@ -129,11 +127,9 @@ namespace BusinessLogic
                         ChatMessage = line
                     };
 
-                    var message = messageData.ToJson();
+                    string message = FillSpace(messageData);
 
-                    //stream readers can only process streams of known length
-
-                    message = message.PadRight(MESSAGE_MAX_LENGTH, ' ');
+                    
 
                     Byte[] data = System.Text.Encoding.ASCII.GetBytes(message);
 
@@ -242,14 +238,8 @@ namespace BusinessLogic
                         Console.WriteLine("Received: {0}", data.TrimEnd('-'));
                         try
                         {
-                            Message message = JsonConvert.DeserializeObject<Message>(data.TrimEnd('-'));
-                            if(message.Type == Message.Types.JoinRequest)
-                            {
-                                //stream.Close();
-                                //client.Close();
-                                //break;
-                            }
-                            ProzessNachricht(self, stream,data, message, client);
+                            Message message = JsonConvert.DeserializeObject<Message>(data.TrimEnd('-'));                            
+                            ProzessNachricht(self, stream, data, message, client);
                         }
                         catch (Exception ex)
                         {
@@ -283,23 +273,44 @@ namespace BusinessLogic
             stream.Close(); //todo
             tcpClient.Close();
 
-            //var nextPort = self.GetNextFreePort();
-            self.serverAddresses.Add(msg.Destination);
-            new Thread(o => this.Server(self, msg.Destination.port)).Start();
+            StartServer(self, msg.Destination);
 
             Thread.Sleep(1000);
 
-            ////Create tcpClient
-            self.tcpClients.Add(new TcpClient(msg.Source.address, msg.Source.port));
-            self.tcpClientAddresses.Add(new IP(msg.Source.address, msg.Source.port));
-            Console.WriteLine("Method: {0}, new TcpClient {1}:{2}", "OnPeerJoinResponse", msg.Source.address, msg.Source.port);
+            StartTcpClient(self, msg.Source);
+        }
+
+        private void StartServer(MyPeerData self, IP ip)
+        {
+            self.serverAddresses.Add(ip);
+            new Thread(o => this.Server(self, ip.port)).Start();
+
+            Console.WriteLine("Started server on {0}:{1}", ip.address, ip.port);
+        }
+
+        private void StartTcpClient(MyPeerData self, IP ip)
+        {
+            self.tcpClients.Add(new TcpClient(ip.address, ip.port));
+            self.tcpClientAddresses.Add(new IP(ip.address, ip.port));
 
             new Thread(o => this.Client(self)).Start();
+
+            Console.WriteLine("Started TCP client on {0}:{1}", ip.address, ip.port);
+        }
+
+        /// <summary>
+        /// stream readers can only process streams of known length
+        /// </summary>
+        private string FillSpace(Message messageData)
+        {
+            string send = messageData.ToJson();
+            return send.PadRight(MESSAGE_MAX_LENGTH, '-');          
         }
 
         public void OnPeerJoinRequest(MyPeerData self, Message message, NetworkStream stream)
         {
             Console.WriteLine("Called OnPeerJoinRequest");
+
             Message messageData = new Message
             {
                 Type = Message.Types.JoinResponse,
@@ -310,9 +321,7 @@ namespace BusinessLogic
             //if peer has no neighbors or TTL == 0, it'll transmits its own address
             if (self.tcpClientAddresses.Count == 0 || message.Ttl == 0)
             {
-                //stream readers can only process streams of known length
-                string send = messageData.ToJson();
-                send = send.PadRight(MESSAGE_MAX_LENGTH, '-');
+                string send = FillSpace(messageData);                              
 
                 Byte[] msg = System.Text.Encoding.ASCII.GetBytes(send);
 
@@ -320,20 +329,13 @@ namespace BusinessLogic
                 stream.Write(msg, 0, msg.Length);
                 string data = System.Text.Encoding.ASCII.GetString(msg, 0, msg.Length);
 
-                Console.WriteLine("Sent: {0}", data.TrimEnd('-'));              
+                Console.WriteLine("Sent: {0}", data.TrimEnd('-'));
 
-                self.serverAddresses.Add(messageData.Source);
-                new Thread(o => this.Server(self, messageData.Source.port)).Start();
+                StartServer(self, messageData.Source);               
 
                 Thread.Sleep(1000);
 
-                ////Create tcpClient
-                self.tcpClients.Add(new TcpClient(messageData.Destination.address, messageData.Destination.port));
-                self.tcpClientAddresses.Add(new IP(messageData.Destination.address, messageData.Destination.port));
-                Console.WriteLine("Method: {0}, new TcpClient {1}:{2}", "OnPeerJoinRequest", messageData.Destination.address, messageData.Destination.port);
-
-                new Thread(o => this.Client(self)).Start();
-
+                StartTcpClient(self, messageData.Destination);
             }
             else
             {
