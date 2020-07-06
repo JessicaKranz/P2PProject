@@ -90,9 +90,9 @@ namespace BusinessLogic
                 }
 
                 // Close everything.
-                stream.Close();
-                tcpClient.Close();
-                Console.WriteLine("Disconnected");
+                //stream.Close();
+                //tcpClient.Close();
+                //Console.WriteLine("Disconnected");
             }
             catch (ArgumentNullException e)
             {
@@ -180,6 +180,7 @@ namespace BusinessLogic
 
         public void Server(MyPeerData self, Int32 port)
         {
+            Console.WriteLine("Opened server on port {0}", port);
             TcpListener server = null;
             try
             {
@@ -223,9 +224,9 @@ namespace BusinessLogic
                             Message message = JsonConvert.DeserializeObject<Message>(data.TrimEnd('-'));
                             if(message.Type == Message.Types.JoinRequest)
                             {
-                                stream.Close();
-                                client.Close();
-                                break;
+                                //stream.Close();
+                                //client.Close();
+                                //break;
                             }
                             ProzessNachricht(self, stream,data, message, client);
 
@@ -267,23 +268,28 @@ namespace BusinessLogic
             stream.Close();
             tcpClient.Close();
 
-            var nextPort = self.GetNextFreePort();
-            self.serverAddresses.Add(nextPort);
-            new Thread(o => this.Server(self, nextPort.port)).Start();
+            //var nextPort = self.GetNextFreePort();
+            self.serverAddresses.Add(msg.Destination);
+            new Thread(o => this.Server(self, msg.Destination.port)).Start();
 
-           
+            Thread.Sleep(1000);
 
+            ////Create tcpClient
+            List<TcpClient> tcpClients = new List<TcpClient>(){
+                    new TcpClient(msg.Destination.address, msg.Destination.port)};
+            self.tcpClientAddresses.Add(new IP(msg.Destination.address, msg.Destination.port));
+
+            new Thread(o => this.Client(tcpClients)).Start();
         }
 
         public void OnPeerJoinRequest(MyPeerData self, Message message, NetworkStream stream)
         {
+            Console.WriteLine("Called OnPeerJoinRequest");
             Message messageData = new Message
             {
                 Type = Message.Types.JoinResponse,
                 Destination = message.Source,
-                Source = self.GetNextFreePort()
-              
-
+                Source = self.GetNextFreePort()           
             };
             
             //if peer has no neighbors, it'll transmits its own address
@@ -299,14 +305,18 @@ namespace BusinessLogic
                 stream.Write(msg, 0, msg.Length);
                 string data = System.Text.Encoding.ASCII.GetString(msg, 0, msg.Length);
 
-                Console.WriteLine("Sent: {0}", data);
+                Console.WriteLine("Sent: {0}", data);              
 
                 self.serverAddresses.Add(messageData.Source);
                 new Thread(o => this.Server(self, messageData.Source.port)).Start();
 
-                //Create tcpClient
+                Thread.Sleep(1000);
+
+                ////Create tcpClient
                 List<TcpClient> tcpClients = new List<TcpClient>(){
                     new TcpClient(messageData.Destination.address, messageData.Destination.port)};
+
+                self.tcpClientAddresses.Add(new IP(messageData.Destination.address, messageData.Destination.port));
 
                 new Thread(o => this.Client(tcpClients)).Start();
 
