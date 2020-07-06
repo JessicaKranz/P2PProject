@@ -71,7 +71,7 @@ namespace BusinessLogic
                 if (!tcpClient.Connected)
                 {
                     var c = tcpClient.Client;
-                    tcpClient.Connect(localAddr, ((IPEndPoint)c.RemoteEndPoint).Port);
+                    tcpClient.ConnectAsync(localAddr, ((IPEndPoint)c.RemoteEndPoint).Port);
                 }
 
                 NetworkStream stream = tcpClient.GetStream();
@@ -116,17 +116,13 @@ namespace BusinessLogic
 
 
         public void Client(MyPeerData self)
-        {
-
-          
+        { 
             while (go_on)
             {
                 Thread.Sleep(300);
                 string line = Console.ReadLine();
                 if (line.Length != 0)
                 {
-
-
                     Message messageData = new Message
                     {
                         Type = Message.Types.PersonalMessage,
@@ -140,8 +136,6 @@ namespace BusinessLogic
                     message = message.PadRight(MESSAGE_MAX_LENGTH, ' ');
 
                     Byte[] data = System.Text.Encoding.ASCII.GetBytes(message);
-
-
 
                     foreach (var client in self.tcpClients)
                     {
@@ -157,7 +151,6 @@ namespace BusinessLogic
                             }
                             
                             NetworkStream stream = client.GetStream();
-
 
                             // Send the message to the connected TcpServer.
                             stream.Write(data, 0, data.Length);
@@ -233,7 +226,7 @@ namespace BusinessLogic
                     if (!client.Connected)
                     {
                         var c = client.Client;
-                        client.Connect(localAddr, ((IPEndPoint)c.RemoteEndPoint).Port);
+                        client.ConnectAsync(localAddr, ((IPEndPoint)c.RemoteEndPoint).Port);
                     }
 
                     // Get a stream object for reading and writing
@@ -257,9 +250,6 @@ namespace BusinessLogic
                                 //break;
                             }
                             ProzessNachricht(self, stream,data, message, client);
-
-
-
                         }
                         catch (Exception ex)
                         {
@@ -286,15 +276,12 @@ namespace BusinessLogic
         }
 
 
-
-
-
         private void OnPeerJoinResponse(MyPeerData self, Message msg, NetworkStream stream, TcpClient tcpClient)
         {
             Console.WriteLine("Called OnPeerJoinResponse");
 
-            //stream.Close(); //todo
-            //tcpClient.Close();
+            stream.Close(); //todo
+            tcpClient.Close();
 
             //var nextPort = self.GetNextFreePort();
             self.serverAddresses.Add(msg.Destination);
@@ -320,8 +307,8 @@ namespace BusinessLogic
                 Source = self.GetNextFreePort()           
             };
             
-            //if peer has no neighbors, it'll transmits its own address
-            if (self.tcpClientAddresses.Count == 0)
+            //if peer has no neighbors or TTL == 0, it'll transmits its own address
+            if (self.tcpClientAddresses.Count == 0 || message.Ttl == 0)
             {
                 //stream readers can only process streams of known length
                 string send = messageData.ToJson();
@@ -357,11 +344,8 @@ namespace BusinessLogic
                     message.Ttl--;
                     // todo does the clients neighbor have an open port to speak with us?
                     var nextRandomWalkStep = self.tcpClientAddresses.ElementAt(random.Next(self.tcpClientAddresses.Count));
-                    Join(self, message.Source, nextRandomWalkStep);
-                }
-                else
-                {
-
+                    message.Destination = nextRandomWalkStep;
+                    OnPeerJoinRequest(self, message, stream);
                 }
             }            
         }    

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using System.Timers;
 
 namespace PeerToPeerCloneA
@@ -89,24 +90,35 @@ namespace PeerToPeerCloneA
             */
             #endregion
 
-            MyPeerData peer = new MyPeerData
+            MyPeerData self = new MyPeerData
             {
                 serverAddresses = new List<IP>()
                 {
-                    new IP("127.0.0.1", 13000)
+                    new IP("127.0.0.1", 13000),
+                    //new IP("127.0.0.1", 13003)
                 },
                 tcpClientAddresses = new List<IP>()
                 {
-                    new IP("127.0.0.1", 13300)
+
                 },
-                requestAddress = new IP("127.0.0.1", 13000)
+                requestAddress = new IP("127.0.0.1", 13000),
+                knownStablePeers = new List<IP>()
+                {
+                    new IP("127.0.0.1", 13100)
+                },
             };
 
+            Random random = new Random();
+
             TcpConnection tcpConnection = new TcpConnection();
-            tcpConnection.StartServersAndClients(peer);
+            //JOIN
+            //peer is not inside the network
+            if (self.tcpClientAddresses.Count == 0)
+            {
+                var selectedStablePeer = self.knownStablePeers.ElementAt(random.Next(self.knownStablePeers.Count));
+                new Thread(o => tcpConnection.Join(self, self.GetNextFreePort(), selectedStablePeer)).Start();
+            }
+            tcpConnection.StartServersAndClients(self);
         }
-
     }
-
-
 }
