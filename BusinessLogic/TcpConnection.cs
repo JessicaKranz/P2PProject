@@ -32,9 +32,9 @@ namespace BusinessLogic
                 Thread.Sleep(1000);
 
                 //Create all tcpClients
-                self.tcpClientAddresses.ForEach(address => self.tcpClients.Add(new TcpClient(address.address, address.port)));
+                //self.tcpClientAddresses.ForEach(address => self.tcpClients.Add(new TcpClient(address.address, address.port)));
                 //Start one threads that manages the connection to all communication partners
-                new Thread(o => this.Client(self.tcpClients)).Start();
+                //new Thread(o => this.Client(self)).Start();
             }
             catch (Exception ex)
             {
@@ -64,6 +64,16 @@ namespace BusinessLogic
             try
             {
                 TcpClient tcpClient = new TcpClient(messageData.Destination.address, messageData.Destination.port);
+                Console.WriteLine("Method: {0}, new TcpClient {1}:{2}", "Join", messageData.Destination.address, messageData.Destination.port);
+
+                IPAddress localAddr = IPAddress.Parse("127.0.0.1");
+
+                if (!tcpClient.Connected)
+                {
+                    var c = tcpClient.Client;
+                    tcpClient.Connect(localAddr, ((IPEndPoint)c.RemoteEndPoint).Port);
+                }
+
                 NetworkStream stream = tcpClient.GetStream();
 
                 // Send the message to the connected TcpServer.
@@ -105,7 +115,7 @@ namespace BusinessLogic
         }
 
 
-        public void Client(List<TcpClient> clients)
+        public void Client(MyPeerData self)
         {
 
           
@@ -133,11 +143,21 @@ namespace BusinessLogic
 
 
 
-                    foreach (var client in clients)
+                    foreach (var client in self.tcpClients)
                     {
+                        Console.WriteLine("Method: {0}, client on port {1}", "Client", client.Client.RemoteEndPoint.ToString());
                         try
                         {
+                            IPAddress localAddr = IPAddress.Parse("127.0.0.1");
+                            
+                            if (!client.Connected)
+                            {
+                                var c = client.Client;
+                                client.ConnectAsync(localAddr, ((IPEndPoint)c.RemoteEndPoint).Port);
+                            }
+                            
                             NetworkStream stream = client.GetStream();
+
 
                             // Send the message to the connected TcpServer.
                             stream.Write(data, 0, data.Length);
@@ -188,6 +208,7 @@ namespace BusinessLogic
 
                 // TcpListener server = new TcpListener(port);
                 server = new TcpListener(localAddr, port);
+                Console.WriteLine("Method: {0}, new TcpListener {1}:{2}", "Server", localAddr, port);
 
                 // Start listening for client requests.
                 server.Start();
@@ -207,6 +228,13 @@ namespace BusinessLogic
                     Console.WriteLine("Connected!");
 
                     data = null;
+
+
+                    if (!client.Connected)
+                    {
+                        var c = client.Client;
+                        client.Connect(localAddr, ((IPEndPoint)c.RemoteEndPoint).Port);
+                    }
 
                     // Get a stream object for reading and writing
                     NetworkStream stream = client.GetStream();
@@ -265,8 +293,8 @@ namespace BusinessLogic
         {
             Console.WriteLine("Called OnPeerJoinResponse");
 
-            stream.Close();
-            tcpClient.Close();
+            //stream.Close(); //todo
+            //tcpClient.Close();
 
             //var nextPort = self.GetNextFreePort();
             self.serverAddresses.Add(msg.Destination);
@@ -277,8 +305,9 @@ namespace BusinessLogic
             ////Create tcpClient
             self.tcpClients.Add(new TcpClient(msg.Destination.address, msg.Destination.port));
             self.tcpClientAddresses.Add(new IP(msg.Destination.address, msg.Destination.port));
+            Console.WriteLine("Method: {0}, new TcpClient {1}:{2}", "OnPeerJoinResponse", msg.Destination.address, msg.Destination.port);
 
-            new Thread(o => this.Client(self.tcpClients)).Start();
+            new Thread(o => this.Client(self)).Start();
         }
 
         public void OnPeerJoinRequest(MyPeerData self, Message message, NetworkStream stream)
@@ -314,8 +343,9 @@ namespace BusinessLogic
                 ////Create tcpClient
                 self.tcpClients.Add(new TcpClient(messageData.Destination.address, messageData.Destination.port));
                 self.tcpClientAddresses.Add(new IP(messageData.Destination.address, messageData.Destination.port));
+                Console.WriteLine("Method: {0}, new TcpClient {1}:{2}", "OnPeerJoinRequest", messageData.Destination.address, messageData.Destination.port);
 
-                new Thread(o => this.Client(self.tcpClients)).Start();
+                new Thread(o => this.Client(self)).Start();
 
             }
             else
