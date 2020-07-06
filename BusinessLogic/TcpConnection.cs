@@ -303,9 +303,9 @@ namespace BusinessLogic
             Thread.Sleep(1000);
 
             ////Create tcpClient
-            self.tcpClients.Add(new TcpClient(msg.Destination.address, msg.Destination.port));
-            self.tcpClientAddresses.Add(new IP(msg.Destination.address, msg.Destination.port));
-            Console.WriteLine("Method: {0}, new TcpClient {1}:{2}", "OnPeerJoinResponse", msg.Destination.address, msg.Destination.port);
+            self.tcpClients.Add(new TcpClient(msg.Source.address, msg.Source.port));
+            self.tcpClientAddresses.Add(new IP(msg.Source.address, msg.Source.port));
+            Console.WriteLine("Method: {0}, new TcpClient {1}:{2}", "OnPeerJoinResponse", msg.Source.address, msg.Source.port);
 
             new Thread(o => this.Client(self)).Start();
         }
@@ -370,11 +370,11 @@ namespace BusinessLogic
         {
             // Process the data sent by the client.
             data = data.ToUpper();
-            Console.WriteLine("\n Sent1: {0}", data);
+            //Console.WriteLine("\n Sent1: {0}", data);
             byte[] msg = System.Text.Encoding.ASCII.GetBytes(data);
             // Send back a response.
             stream.Write(msg, 0, msg.Length);
-            Console.WriteLine("\n Sent2: {0}", data);
+            //Console.WriteLine("\n Sent2: {0}", data);
         }
 
 
