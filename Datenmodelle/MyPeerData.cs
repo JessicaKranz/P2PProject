@@ -11,11 +11,9 @@ namespace Datenmodelle
     {
         public string MyName { get; set; }
         Random Random = new Random();
-        public Fish MyFish { get; set; }
-        public int WunschAnzahlNachbarn { get; set; }
+
         public int myPeerID { get; } //Erzeugt Zahlenzwischen 10.000.000 und 99.999.999
-        public List<Peer> bekanntePeers { get; set; }    //TODO Liste wo BEKANNTE Peers als Peers eingetragen werden
-       
+     
         public IPAddress myIPAddress { get; set; }    //Meine IP Addresse
 
         public List<GroupChat> myGroupChats { get; set; }
@@ -39,7 +37,6 @@ namespace Datenmodelle
         public MyPeerData()
         {
             myPeerID = Random.Next(1 * (int)Math.Pow(10, 7), 1 * (int)Math.Pow(10, 8) - 1);
-            MyFish = new Fish(Random.Next(), Random.NextDouble());
 
             if (MyName == string.Empty)
             {
@@ -47,7 +44,6 @@ namespace Datenmodelle
             }
             myIPAddress = GetLocalIPAddress();
 
-            bekanntePeers = new List<Peer>();
             myGroupChats = new List<GroupChat>();
             serverAddresses = new List<IP>();
             tcpClientAddresses = new List<IP>();

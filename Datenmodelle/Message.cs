@@ -8,10 +8,7 @@ namespace Datenmodelle
     {
         public enum Types
         {
-            /*
-            PeerEntry,
-            PeerJoin,
-            FishTank,*/
+
             PersonalMessage,
             GroupMessage,
 
@@ -44,6 +41,7 @@ namespace Datenmodelle
         /// <summary>
         /// senders name
         /// </summary>
+        
         public string AuthorName { get; set; }
         /// <summary>
         /// Name of the GroupChat a Message is either a) broadcasting its existence or b) delivering a Message from. 

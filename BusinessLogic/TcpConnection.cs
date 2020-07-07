@@ -264,53 +264,54 @@ namespace BusinessLogic
             Console.Read();
         }
 
-
-        private void OnPeerJoinResponse(MyPeerData self, Message message, NetworkStream stream, TcpClient tcpClient)
-        {
-            Console.WriteLine("Called OnPeerJoinResponse");
-
-            stream.Close(); //todo
-            tcpClient.Close();
-
-            StartServer(self, message.DestinationIP);
-
-            Thread.Sleep(1000);
-
-            StartTcpClient(self, message.SourceIP);
-        }
-
-        void ConnectTCP(MyPeerData self, Message message, Peer newNeighbour)
+        /*Hier passiert die Logic eines Peers. Hier steht was er bei welchem Nachrichtentyp Macht etc*/
+        private void ProzessNachricht(MyPeerData self, NetworkStream stream, string data, Message message, TcpClient tcpClient)
         {
 
-            Console.WriteLine("Ich verbinde mich jetzt mit \"" + message.SourceIP + "\"!");
 
-            StartServer(self, message.SourceIP);
-            Thread.Sleep(1000);
-            StartTcpClient(self, message.DestinationIP);
+            // Haben wir diese Nachricht schonmal gesehen
+            if (self.seenMessages.Any(x => x.TimeStamp == message.TimeStamp && x.SourceId == message.SourceId))
+            {
+                return;
+            }
+            else
+            {
+                self.seenMessages.Add(message);
+                if (self.seenMessages.Count > 1500)
+                {
+                    self.seenMessages.RemoveRange(0, 500);
+                }
+            }
 
+
+            switch (message.Type)
+            {
+
+                case Message.Types.PersonalMessage:
+                    OnChatMessageReceived(data, stream);
+
+                    break;
+                case Message.Types.GroupMessage:
+                    //TODO
+                    break;
+
+                case Message.Types.WannabeNeighbour:
+                    //TODO 
+                    break;
+
+                //Jessies Cases
+                case Message.Types.JoinRequest:
+                    OnPeerJoinRequest(self, message, stream);
+                    break;
+                case Message.Types.JoinResponse:
+                    OnPeerJoinResponse(self, message, stream, tcpClient);
+                    break;
+                default:
+                    OnChatMessageReceived(data, stream);
+                    break;
+            }
         }
 
-        private void StartServer(MyPeerData self, IP partnerIp)
-        {
-            self.serverAddresses.Add(partnerIp);
-            new Thread(o => this.Server(self, partnerIp.port)).Start();
-
-            Console.WriteLine("Started server on {0}:{1}", partnerIp.address, partnerIp.port);
-        }
-
-        private void StartTcpClient(MyPeerData self, IP myIp)
-        {
-            self.tcpClients.Add(new TcpClient(myIp.address, myIp.port));
-            self.tcpClientAddresses.Add(new IP(myIp.address, myIp.port));
-
-            new Thread(o => this.Client(self)).Start();
-
-            Console.WriteLine("Started TCP client on {0}:{1}", myIp.address, myIp.port);
-        }
-
-
-
- 
 
         public void OnPeerJoinRequest(MyPeerData self, Message incommingMessage, NetworkStream stream)
         {
@@ -355,177 +356,48 @@ namespace BusinessLogic
                     OnPeerJoinRequest(self, incommingMessage, stream);
                 }
             }            
-        }    
-        
+        }
+
+        private void OnPeerJoinResponse(MyPeerData self, Message message, NetworkStream stream, TcpClient tcpClient)
+        {
+            Console.WriteLine("Called OnPeerJoinResponse");
+
+            stream.Close(); //todo
+            tcpClient.Close();
+
+            StartServer(self, message.DestinationIP);
+
+            Thread.Sleep(1000);
+
+            StartTcpClient(self, message.SourceIP);
+        }
+
         public void OnChatMessageReceived(string data, NetworkStream stream)
         {
             byte[] message = System.Text.Encoding.ASCII.GetBytes(data);
             // Send back a response.
-            stream.Write(message, 0, message.Length);
+             stream.Write(message, 0, message.Length);
         }
 
-
-
-
-        #region EingehendeNachrichtenLogik 
-        /*Hier passiert die Logic eines Peers. Hier steht was er bei welchem Nachrichtentyp Macht etc*/
-        private void ProzessNachricht(MyPeerData self, NetworkStream stream, string data, Message message, TcpClient tcpClient)
+        private void StartServer(MyPeerData self, IP partnerIp)
         {
-           
+            self.serverAddresses.Add(partnerIp);
+            new Thread(o => this.Server(self, partnerIp.port)).Start();
 
-            // Haben wir diese Nachricht schonmal gesehen
-            if (self.seenMessages.Any(x => x.TimeStamp == message.TimeStamp && x.SourceId == message.SourceId)) 
-            {
-                return;
-            } else
-            {
-                self.seenMessages.Add(message);
-                if(self.seenMessages.Count > 1500) 
-                { 
-                    self.seenMessages.RemoveRange(0, 500);
-                }
-            }
-
-            
-            switch (message.Type)
-            {
-                //Leos Cases
-                /*
-                case Message.Types.PeerEntry:
-                    IncommingPeerEntryMessage(self , message);
-                    break;
-                case Message.Types.PeerJoin: // We use Jessies Code
-                    IncommingPeerJoinMessage(self, message);
-                    break;
-                  case Message.Types.FishTank:
-                    IncommingFishTankMessage(self, message);
-                    break;*/
-                case Message.Types.PersonalMessage:
-                    OnChatMessageReceived(data, stream);
-                    break;
-                case Message.Types.GroupMessage:
-                    IncommingGroupMessage(self, message);
-                    break;
-
-                case Message.Types.WannabeNeighbour:
-                    //TODO dostuff()
-                    break;
-
-                //Jessies Cases
-                case Message.Types.JoinRequest:
-                    OnPeerJoinRequest(self, message, stream);
-                    break;
-                case Message.Types.JoinResponse:
-                    OnPeerJoinResponse(self, message, stream, tcpClient);
-                    break;
-                default:
-                    OnChatMessageReceived(data, stream);
-                    break;
-            }
+            Console.WriteLine("Started server on {0}:{1}", partnerIp.address, partnerIp.port);
         }
 
-       
-
-
-
-
-        void IncommingPersonalMessage(MyPeerData self, Message message)
+        private void StartTcpClient(MyPeerData self, IP myIp)
         {
-            message.Ttl--;
-            if (message.DestinationId == self.myPeerID)
-            {
-                //Maybe Find a better way to deliver
-                Console.WriteLine("[" + message.TimeStamp + message.AuthorName + "] " + " wrote to you:" + message.ChatMessage);
-            }
-            else if (null != self.neighbours.Where(x => x.partnerPeer.peerID == message.DestinationId))
-            {
-                SendMessage(self, message, self.neighbours.Where(x => x.partnerPeer.peerID == message.DestinationId).FirstOrDefault());
-            }
-            else
-            {
-                SendMessageFloodOverlay(self, message);
-            }
+            self.tcpClients.Add(new TcpClient(myIp.address, myIp.port));
+            self.tcpClientAddresses.Add(new IP(myIp.address, myIp.port));
+
+            new Thread(o => this.Client(self)).Start();
+
+            Console.WriteLine("Started TCP client on {0}:{1}", myIp.address, myIp.port);
         }
-
-        void IncommingGroupMessage(MyPeerData self, Message message)
-        {
-            message.Ttl--;
-            if (null != self.myGroupChats.Find(x => x.groupChatID == message.DestinationId))
-            {
-                //Maybe Find a better way to deliver
-                Console.WriteLine("[" + message.TimeStamp + message.AuthorName + "] " + " wrote in \"" + message.GroupChatName + "\":" + message.ChatMessage);
-            }
-            else
-            {
-                SendMessageFloodOverlay(self, message);
-            }
-        }
-
-
-
-        #endregion
-
-        #region Ausgehende Nachrichten Logik
-
-
-
-
-        public void SendPersonalMessage(MyPeerData self, string PM, int destinationID)
-        {
-            SendMessageFloodOverlay(self, new Message
-            {
-                Type = Message.Types.PersonalMessage,
-                Ttl = 7, //(int)(3 * (1 + 1 / myFish.GetPortion())), //TODO CHECK IF PMS REACH DESTINATION. OTHERWISE MAKE TTL HIGHER Maybe the given Algorithm will work
-                AuthorName = self.MyName,
-                DestinationId = destinationID,
-                SourceId = self.myPeerID,
-                ChatMessage = PM,
-            });
-        }
-        public void SendGroupMessage(MyPeerData self, string GM, int destinationID)
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
-        /// Versendet die Nachricht message an einen zufälligen Nachbarn im Overlay 
-        /// </summary>
-        /// <param name="message"></param>
-        private void SendMessageSingularRandom(MyPeerData self, Message message)
-        {
-            Random rand = new Random();
-            //Maybe not send it back to previous Peer but not important
-            var randomNeighbour = self.neighbours[rand.Next(self.neighbours.Count) - 1];
-            SendMessage(self, message, randomNeighbour);
-        }
-
-        /// <summary>
-        /// Versendet die Nachricht message an alle bekannten Nachbarn (Die Gesamte neigbours Liste)
-        /// </summary>
-        /// <param name="message"></param>
-        private void SendMessageFloodOverlay(MyPeerData self, Message message)
-        {
-            //Maybe not send it back to previous Peer but not important (message.SourceId tut nicht immer das gewünschte.
-            foreach (Connection neighbour in self.neighbours)
-            {
-                SendMessage(self , message, neighbour);
-            }
-        }
-
-        /// <summary>
-        /// Sendet Nachricht message an den Peer mit dem er durch Connection c verbunden ist
-        /// </summary>
-        /// <param name="message"></param>
-        /// <param name="c"></param>
-        private void SendMessage(MyPeerData self, Message message, Connection c)
-        {
-            //TODO //JESSICA DO STUFF HERE
-        }
-
-        #endregion
 
         #region Other Functions #region Allerlei Funktionen
-       
 
         private Boolean WillIBecomeANewNeighbour(MyPeerData self)
         {
@@ -552,119 +424,5 @@ namespace BusinessLogic
 
         #endregion
 
-
-
-        #region auskommentiert
-        /*This does not properly work yet
-        private void OnFishTimerEvent(MyPeerData self, Object source, ElapsedEventArgs e)
-        {
-            SendFTMessage(self);
-        }
-        public void Reset(System.Timers.Timer timer)
-        {
-            timer.Stop();
-            timer.Start();
-        }
-
-
-        //TODO LEONARD
-        private void SetFishTankTimer()
-        {
-            
-            // Create a timer with a 60 second interval.
-            myFishTimer = new System.Timers.Timer(60000);    // 1min
-            // Hook up the Elapsed event for the timer. 
-            myFishTimer.Elapsed += OnFishTimerEvent;
-            myFishTimer.AutoReset = true;
-            myFishTimer.Enabled = true;
-            
-        }*/
-
-        /*This does not properly work yet
-        private void SendFTMessage(MyPeerData self )
-        {
-            self.myFish.SetPortion(self.myFish.GetPortion() / self.neighbours.Count() + 1); //Aktualisiere den eigenen Fish und versende Ihn. //TOTALK muss man das Synchronized machen?
-            SendMessageFloodOverlay(self,new Message
-            {
-                Fish = self.myFish,
-                SourceId = self.myPeerID,
-                AuthorName = self.MyName,
-            });
-        }
-        //this does not properly work yet
-        void IncommingFishTankMessage(MyPeerData self, Message message)
-        {
-            
-            if (message.Fish.GetSize() > self.myFish.GetSize())
-            {
-                self.myFish = message.Fish;
-                Reset(myFishTimer);
-            }
-            else if (message.Fish.GetSize() > myFish.GetSize())
-            {
-                myFish.SetPortion(myFish.GetPortion() + message.Fish.GetPortion());
-                Reset(myFishTimer);
-            }
-
-        }
-        We use Jessies Code
-        public void SendPeerEntryMessage(MyPeerData self)
-        {
-
-            //TODO JESSICA NEEDS TO INSERT CODE HERE
-            //FOR THIS WE DONT HAVE A CONNECTION YET? WHAT TO DO?
-
-            //SendMessage(new Message { },new Connection )
-        } 
-                 We use Jessies Code 
-        void IncommingPeerJoinMessage(MyPeerData self, Message message)
-        {
-            message.Ttl--;
-
-            if (self.tcpClients.Any(x => x.Client. == message.SourceIP.address))
-            {
-                if (WillIBecomeANewNeighbour(self))
-                {
-                    message.WishedNeighbours--;
-                    ConnectTCP(self, message, new Peer(message.SourceId, message.AuthorName));
-                }
-            }
-
-            if (message.WishedNeighbours > 0)
-            {
-                SendMessageFloodOverlay(self, new Message
-                {
-                    Type = Message.Types.PeerJoin,
-                    Ttl = message.Ttl,
-                    SourceId = message.SourceId,
-                    AuthorName = message.AuthorName,
-                    SourceIP = message.SourceIP,
-
-                });
-            }
-        }
-         void IncommingPeerEntryMessage(MyPeerData self, Message message)
-        {
-            message.Ttl = (int)(message.WishedNeighbours * 3 * (1 + 1 / self.tcpClients.Count /*self.myFish.GetPortion()*//*));          // Erzeuge eine TTL die Zukksessiv heruntergesetzt wird, damit es im Overlay keine Geisternachrichten gibt.
-            if (WillIBecomeANewNeighbour(self))
-            {
-                message.WishedNeighbours--;
-                ConnectTCP(self, message, new Peer(message.SourceId, message.AuthorName));
-            }
-            if (message.WishedNeighbours > 0 && message.Ttl > 0)
-            {
-                SendMessageFloodOverlay(self, new Message
-                {
-                    Type = Message.Types.PeerJoin,
-                    Ttl = message.Ttl,
-                    SourceId = message.SourceId,
-                    AuthorName = message.AuthorName,
-                    SourceIP = message.SourceIP,
-
-                });
-            }
-        }
-        */
-        #endregion
     }
 }
