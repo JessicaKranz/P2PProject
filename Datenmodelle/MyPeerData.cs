@@ -15,16 +15,21 @@ namespace Datenmodelle
         public int wunschAnzahlNachbarn { get; set; }
         public int myPeerID { get; } //Erzeugt Zahlenzwischen 10.000.000 und 99.999.999
         public List<Peer> bekanntePeers { get; set; }    //TODO Liste wo BEKANNTE Peers als Peers eingetragen werden
-        public List<Connection> neighbours { get; set; }  //TODO Liste wo die Nachbarn also Nachbar Peers abgespeichert sind. Als Connection. Mit jeweils eigenem und gegenteiligem Peer object (brauch man das?) , ipAddresse und PortNummber
+       
         public IPAddress myIPAddress { get; set; }    //Meine IP Addresse
 
         public List<GroupChat> myGroupChats { get; set; }
 
         public IP requestAddress { get; set; }
-        public List<IP> serverAddresses { get; set; }
-        public List<IP> tcpClientAddresses { get; set; }
-        public List<TcpClient> tcpClients { get; set; } = new List<TcpClient>();
-        public List<IP> knownStablePeers { get; set; } = new List<IP>  //want to refactor into neigbours
+        public List<IP> serverAddresses { get; set; }                            // was ist das genau?
+        public List<IP> tcpClientAddresses { get; set; }                         // was ist das genau?
+        /// <summary>
+        /// Dies sind die Nachbarn
+        /// </summary>
+        public List<TcpClient> tcpClients { get; set; } = new List<TcpClient>(); //neighbours
+
+        public List<Message> seenMessages { get; set; } = new List<Message>();
+        public List<IP> knownStablePeers { get; set; } = new List<IP>  
         {
             new IP("127.0.0.1", 13000),
             new IP("127.0.0.1", 13100),
@@ -43,7 +48,6 @@ namespace Datenmodelle
             myIPAddress = GetLocalIPAddress();
 
             bekanntePeers = new List<Peer>();
-            neighbours = new List<Connection>();
             myGroupChats = new List<GroupChat>();
             serverAddresses = new List<IP>();
             tcpClientAddresses = new List<IP>();
