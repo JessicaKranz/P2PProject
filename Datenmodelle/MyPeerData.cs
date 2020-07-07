@@ -9,10 +9,10 @@ namespace Datenmodelle
 {
     public class MyPeerData
     {
-        public string myName { get; set; }
-        Random random = new Random();
-        public Fish myFish { get; set; }
-        public int wunschAnzahlNachbarn { get; set; }
+        public string MyName { get; set; }
+        Random Random = new Random();
+        public Fish MyFish { get; set; }
+        public int WunschAnzahlNachbarn { get; set; }
         public int myPeerID { get; } //Erzeugt Zahlenzwischen 10.000.000 und 99.999.999
         public List<Peer> bekanntePeers { get; set; }    //TODO Liste wo BEKANNTE Peers als Peers eingetragen werden
        
@@ -38,12 +38,12 @@ namespace Datenmodelle
 
         public MyPeerData()
         {
-            myPeerID = random.Next(1 * (int)Math.Pow(10, 7), 1 * (int)Math.Pow(10, 8) - 1);
-            myFish = new Fish(random.Next(), random.NextDouble());
+            myPeerID = Random.Next(1 * (int)Math.Pow(10, 7), 1 * (int)Math.Pow(10, 8) - 1);
+            MyFish = new Fish(Random.Next(), Random.NextDouble());
 
-            if (myName == string.Empty)
+            if (MyName == string.Empty)
             {
-                myName = "" + myPeerID;
+                MyName = "" + myPeerID;
             }
             myIPAddress = GetLocalIPAddress();
 
@@ -67,7 +67,7 @@ namespace Datenmodelle
                 int nextPort;
                 do
                 {
-                    nextPort = random.Next(requestAddress.port, requestAddress.port + 99);
+                    nextPort = Random.Next(requestAddress.port, requestAddress.port + 99);
                 } while (this.serverAddresses.Any(x => x.port == nextPort));
 
                 return new IP("127.0.0.1", nextPort);

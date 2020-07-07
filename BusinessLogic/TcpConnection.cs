@@ -476,7 +476,7 @@ namespace BusinessLogic
             {
                 Type = Message.Types.PersonalMessage,
                 Ttl = 7, //(int)(3 * (1 + 1 / myFish.GetPortion())), //TODO CHECK IF PMS REACH DESTINATION. OTHERWISE MAKE TTL HIGHER Maybe the given Algorithm will work
-                AuthorName = self.myName,
+                AuthorName = self.MyName,
                 DestinationId = destinationID,
                 SourceId = self.myPeerID,
                 ChatMessage = PM,
@@ -588,7 +588,7 @@ namespace BusinessLogic
             {
                 Fish = self.myFish,
                 SourceId = self.myPeerID,
-                AuthorName = self.myName,
+                AuthorName = self.MyName,
             });
         }
         //this does not properly work yet
