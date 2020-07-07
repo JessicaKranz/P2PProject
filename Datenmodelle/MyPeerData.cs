@@ -9,22 +9,25 @@ namespace Datenmodelle
 {
     public class MyPeerData
     {
-        public string myName { get; set; }
-        Random random = new Random();
-        public Fish myFish { get; set; }
-        public int wunschAnzahlNachbarn { get; set; }
+        public string MyName { get; set; }
+        Random Random = new Random();
+
         public int myPeerID { get; } //Erzeugt Zahlenzwischen 10.000.000 und 99.999.999
-        public List<Peer> bekanntePeers { get; set; }    //TODO Liste wo BEKANNTE Peers als Peers eingetragen werden
-        public List<Connection> neighbours { get; set; }  //TODO Liste wo die Nachbarn also Nachbar Peers abgespeichert sind. Als Connection. Mit jeweils eigenem und gegenteiligem Peer object (brauch man das?) , ipAddresse und PortNummber
+     
         public IPAddress myIPAddress { get; set; }    //Meine IP Addresse
 
         public List<GroupChat> myGroupChats { get; set; }
 
         public IP requestAddress { get; set; }
-        public List<IP> serverAddresses { get; set; }
-        public List<IP> tcpClientAddresses { get; set; }
-        public List<TcpClient> tcpClients { get; set; } = new List<TcpClient>();
-        public List<IP> knownStablePeers { get; set; } = new List<IP>  //want to refactor into neigbours
+        public List<IP> serverAddresses { get; set; }                            // was ist das genau?
+        public List<IP> tcpClientAddresses { get; set; }                         // was ist das genau?
+        /// <summary>
+        /// Dies sind die Nachbarn
+        /// </summary>
+        public List<TcpClient> tcpClients { get; set; } = new List<TcpClient>(); //neighbours
+
+        public List<Message> seenMessages { get; set; } = new List<Message>();
+        public List<IP> knownStablePeers { get; set; } = new List<IP>  
         {
             new IP("127.0.0.1", 13000),
             new IP("127.0.0.1", 13100),
@@ -33,17 +36,14 @@ namespace Datenmodelle
 
         public MyPeerData()
         {
-            myPeerID = random.Next(1 * (int)Math.Pow(10, 7), 1 * (int)Math.Pow(10, 8) - 1);
-            myFish = new Fish(random.Next(), random.NextDouble());
+            myPeerID = Random.Next(1 * (int)Math.Pow(10, 7), 1 * (int)Math.Pow(10, 8) - 1);
 
-            if (myName == string.Empty)
+            if (MyName == string.Empty)
             {
-                myName = "" + myPeerID;
+                MyName = "" + myPeerID;
             }
             myIPAddress = GetLocalIPAddress();
 
-            bekanntePeers = new List<Peer>();
-            neighbours = new List<Connection>();
             myGroupChats = new List<GroupChat>();
             serverAddresses = new List<IP>();
             tcpClientAddresses = new List<IP>();
@@ -63,7 +63,7 @@ namespace Datenmodelle
                 int nextPort;
                 do
                 {
-                    nextPort = random.Next(requestAddress.port, requestAddress.port + 99);
+                    nextPort = Random.Next(requestAddress.port, requestAddress.port + 99);
                 } while (this.serverAddresses.Any(x => x.port == nextPort));
 
                 return new IP("127.0.0.1", nextPort);
