@@ -82,6 +82,7 @@ namespace BusinessLogic
                 // Read the first batch of the TcpServer response bytes.
                 Int32 bytes = stream.Read(data, 0, data.Length);
                 responseData = System.Text.Encoding.ASCII.GetString(data, 0, data.Length);
+               
                 Console.WriteLine("Received: {0}", responseData.TrimEnd('-'));
 
                 try
@@ -154,7 +155,9 @@ namespace BusinessLogic
                             // Read the first batch of the TcpServer response bytes.
                             Int32 bytes = stream.Read(data, 0, data.Length);
                             responseData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
-                            Console.WriteLine("Received: {0}", responseData.TrimEnd('-'));
+
+                            // i dont wanna message myself
+                           // Console.WriteLine("Received: {0}", responseData.TrimEnd('-'));
 
                             //if (line.Equals("quit"))
                             //{
@@ -206,7 +209,7 @@ namespace BusinessLogic
                     // You could also use server.AcceptSocket() here.
                     TcpClient client = server.AcceptTcpClient();
                     Console.WriteLine("Connected!");
-
+                    Console.WriteLine("Try to send you message now : ");
                     data = null;
 
 
@@ -218,6 +221,8 @@ namespace BusinessLogic
 
                     // Get a stream object for reading and writing
                     NetworkStream stream = client.GetStream();
+                   
+
 
                     int i;
 
@@ -226,7 +231,8 @@ namespace BusinessLogic
                     {
                         // Translate data bytes to a ASCII string.
                         data = System.Text.Encoding.ASCII.GetString(bytes, 0, i);
-                        Console.WriteLine("Received: {0}", data.TrimEnd('-'));
+                        Console.WriteLine("You Got a Message with this Header: {0}", data.TrimEnd('-'));
+                        Console.WriteLine("Enter you Answer Here : ");
                         try
                         {
                             Message message = JsonConvert.DeserializeObject<Message>(data.TrimEnd('-'));                            
@@ -366,6 +372,7 @@ namespace BusinessLogic
 
         public void OnChatMessageReceived(string data, NetworkStream stream)
         {
+
             byte[] message = System.Text.Encoding.ASCII.GetBytes(data);
             // Send back a response.
              stream.Write(message, 0, message.Length);
