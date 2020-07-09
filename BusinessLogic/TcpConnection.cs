@@ -203,7 +203,7 @@ namespace BusinessLogic
                 // Enter the listening loop.
                 while (true)
                 {
-                    Console.Write("Waiting for a connection... ");
+                    Console.WriteLine("Waiting for a connection... ");
 
                     // Perform a blocking call to accept requests.
                     // You could also use server.AcceptSocket() here.
@@ -342,10 +342,7 @@ namespace BusinessLogic
                 Console.WriteLine("Sent: {0}", data.TrimEnd('-'));
 
                 StartServer(self, newAnswerMessage.SourceIP);               
-
-                Thread.Sleep(1000);
-
-                StartTcpClient(self, newAnswerMessage.DestinationIP);
+               
             }
             else
             {
