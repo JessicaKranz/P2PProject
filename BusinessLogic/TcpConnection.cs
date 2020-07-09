@@ -8,6 +8,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Timers;
 using System.Reflection;
+using System.Text;
 
 namespace BusinessLogic
 {
@@ -112,17 +113,33 @@ namespace BusinessLogic
 
 
         public void Client(MyPeerData self)
-        { 
+        {
+            string author = string.Empty;
+
             while (go_on)
             {
                 Thread.Sleep(300);
+               /* if (self.Authorgiven == false)
+                {
+                    Console.WriteLine("Give yourself a Name : ");
+
+
+                    author = Console.ReadLine();
+                    self.Authorgiven = true;
+                }
+               */
+               // Console.WriteLine("Enter your Message: ");
                 string line = Console.ReadLine();
+
+
                 if (line.Length != 0)
                 {
                     Message chatMessage = new Message
                     {
                         Type = Message.Types.PersonalMessage,
-                        ChatMessage = line
+                        ChatMessage = line,
+                        //AuthorName = author
+                        
                     };
 
                     string message = FillSpace(chatMessage);
@@ -133,7 +150,7 @@ namespace BusinessLogic
 
                     foreach (var client in self.tcpClients)
                     {
-                        Console.WriteLine("Method: {0}, client on port {1}", "Client", client.Client.RemoteEndPoint.ToString());
+                       // Console.WriteLine("Method: {0}, client on port {1}", "Client", client.Client.RemoteEndPoint.ToString());
                         try
                         {  
                             if (!client.Connected)
@@ -209,7 +226,8 @@ namespace BusinessLogic
                     // You could also use server.AcceptSocket() here.
                     TcpClient client = server.AcceptTcpClient();
                     Console.WriteLine("Connected!");
-                    Console.WriteLine("Try to send you message now : ");
+                    
+
                     data = null;
 
 
@@ -234,14 +252,16 @@ namespace BusinessLogic
                         //Console.WriteLine("You Got a Message with this Header: {0}", data.TrimEnd('-'));
                                              
                         
-                        Console.WriteLine("Enter you Answer Here : ");
+                       
                         try
                         {
                             Message message = JsonConvert.DeserializeObject<Message>(data.TrimEnd('-'));
-                            Console.WriteLine(" Time : '{0}'", message.TimeStamp);
-                            Console.WriteLine(" Message : '{0}'", message.ChatMessage);
-                           
-                            
+                            Console.WriteLine("\n");
+                            //Console.WriteLine("Send from : {0}",message.SourceIP);
+                            Console.WriteLine("Send at : '{0}'", message.TimeStamp);
+                            Console.WriteLine("Message : '{0}'", message.ChatMessage);
+                            Console.WriteLine("Enter you Answer Here : ");
+
                             ProzessNachricht(self, stream, data, message, client);
                         }
                         catch (Exception ex)
