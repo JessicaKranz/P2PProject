@@ -44,7 +44,7 @@ namespace BusinessLogic
         }
 
 
-        public void Join(MyPeerData self, IP OriginIp, IP IpToJoin)
+        public bool Join(MyPeerData self, IP OriginIp, IP IpToJoin)
         {
             Message newAnswerMessage = new Message
             {
@@ -94,7 +94,9 @@ namespace BusinessLogic
                 catch (Exception ex)
                 {
                     Console.WriteLine("Could not deserialize malformed message. Message was {0}. Failed with {1}", data, ex.Message);
+                    return false;
                 }
+                return true;
 
                 // Close everything.
                 //stream.Close();
@@ -104,10 +106,13 @@ namespace BusinessLogic
             catch (ArgumentNullException e)
             {
                 Console.WriteLine("ArgumentNullException: {0}", e);
+                return false;
             }
             catch (SocketException e)
             {
-                Console.WriteLine("SocketException: {0}", e);
+                Console.WriteLine("Could not establish a connection to known stable peer {0}:{1}", IpToJoin.address, IpToJoin.port);
+                //Console.WriteLine("SocketException: {0}", e);
+                return false;
             }
         }
 
@@ -418,6 +423,41 @@ namespace BusinessLogic
 
             Console.WriteLine("Started TCP client on {0}:{1}", myIp.address, myIp.port);
         }
+
+
+        public bool ManageJoin(MyPeerData self)
+        {
+            Random random = new Random();
+            //overlay mode
+            //var selectedStablePeer = self.knownStablePeers.ElementAt(random.Next(self.knownStablePeers.Count));
+
+            //bool value = false; // Used to store the return value
+            //var thread = new Thread(() =>
+            //{
+            //    value = Join(self, self.GetNextFreePort(), selectedStablePeer);
+            //});
+            //thread.Start();
+            //thread.Join();
+            //Console.WriteLine(value);
+            //return value;
+
+            //groupchat mode
+            bool value = true; // Used to store the return value
+            foreach (var stablePeer in self.knownStablePeers)
+            {             
+                var thread = new Thread(() =>
+                {
+                    value = value && Join(self, self.GetNextFreePort(), stablePeer);
+                });
+                thread.Start();
+                thread.Join();
+                Console.WriteLine(value);           
+            }
+            if(self.knownStablePeers.Count == 0) { value = false; }
+            return value;
+
+        }
+
 
         #region Other Functions #region Allerlei Funktionen
 

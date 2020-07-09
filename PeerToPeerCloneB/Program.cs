@@ -2,11 +2,7 @@
 using Datenmodelle;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Net.Sockets;
 using System.Threading;
-using System.Timers;
 
 namespace PeerToPeerCloneB
 {
@@ -109,25 +105,18 @@ namespace PeerToPeerCloneB
                 },
             };
 
-            Random random = new Random();
 
             TcpConnection tcpConnection = new TcpConnection();
-            //JOIN
-            //peer is not inside the network
             tcpConnection.StartServers(self);
             Thread.Sleep(1000);
             if (self.tcpClientAddresses.Count == 0)
             {
-                //overlay mode
-                //var selectedStablePeer = self.knownStablePeers.ElementAt(random.Next(self.knownStablePeers.Count));
-                //new Thread(o => tcpConnection.Join(self, self.GetNextFreePort(), selectedStablePeer)).Start();
 
-                //groupchat mode
-                foreach (var stablePeer in self.knownStablePeers)
+                bool joinedSuccessfull = false;
+                while (!joinedSuccessfull)
                 {
-                    new Thread(o => tcpConnection.Join(self, self.GetNextFreePort(), stablePeer)).Start();
-                    Thread.Sleep(1000);
-
+                    joinedSuccessfull = tcpConnection.ManageJoin(self);
+                    Thread.Sleep(15000);
                 }
             }
 
