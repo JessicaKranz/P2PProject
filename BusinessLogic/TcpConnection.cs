@@ -233,11 +233,15 @@ namespace BusinessLogic
                         data = System.Text.Encoding.ASCII.GetString(bytes, 0, i);
                         //Console.WriteLine("You Got a Message with this Header: {0}", data.TrimEnd('-'));
                                              
-                        Console.WriteLine(" Message : '{0}'",data.Substring(157,100).TrimEnd('-').Trim('}'));
+                        
                         Console.WriteLine("Enter you Answer Here : ");
                         try
                         {
-                            Message message = JsonConvert.DeserializeObject<Message>(data.TrimEnd('-'));                            
+                            Message message = JsonConvert.DeserializeObject<Message>(data.TrimEnd('-'));
+                            Console.WriteLine(" Time : '{0}'", message.TimeStamp);
+                            Console.WriteLine(" Message : '{0}'", message.ChatMessage);
+                           
+                            
                             ProzessNachricht(self, stream, data, message, client);
                         }
                         catch (Exception ex)
@@ -315,7 +319,7 @@ namespace BusinessLogic
 
         public void OnPeerJoinRequest(MyPeerData self, Message incommingMessage, NetworkStream stream)
         {
-            Console.WriteLine("Called OnPeerJoinRequest");
+           /// Console.WriteLine("Called OnPeerJoinRequest");
 
             Message newAnswerMessage = new Message
             {
