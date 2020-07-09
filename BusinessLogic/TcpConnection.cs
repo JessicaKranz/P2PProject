@@ -14,13 +14,12 @@ namespace BusinessLogic
     public class TcpConnection
     {
         const int MESSAGE_MAX_LENGTH = 1024;
-
-        //List<TcpClient> tcpClients = new List<TcpClient>();
+        readonly IPAddress LocalAddr = IPAddress.Parse("127.0.0.1");
 
         bool go_on = true;
-        Random random = new Random();
+        readonly Random random = new Random();
 
-        public void StartServersAndClients(MyPeerData self)
+        public void StartServers(MyPeerData self)
         {
             try
             {
@@ -29,7 +28,7 @@ namespace BusinessLogic
                 self.serverAddresses.ForEach(address => Console.WriteLine("Started serving on {0}:{1}", "127.0.0.1", address.port));
 
                 //Servers must be running before clients may connect
-                Thread.Sleep(1000);
+                //Thread.Sleep(1000);
 
                 //Create all tcpClients
                 //self.tcpClientAddresses.ForEach(address => self.tcpClients.Add(new TcpClient(address.address, address.port)));
@@ -62,14 +61,12 @@ namespace BusinessLogic
             try
             {
                 TcpClient tcpClient = new TcpClient(newAnswerMessage.DestinationIP.address, newAnswerMessage.DestinationIP.port);
-                Console.WriteLine("Method: {0}, new TcpClient {1}:{2}", "Join", newAnswerMessage.DestinationIP.address, newAnswerMessage.DestinationIP.port);
-
-                IPAddress localAddr = IPAddress.Parse("127.0.0.1");
+                Console.WriteLine("Method: {0}, new TcpClient {1}:{2}", "Join", newAnswerMessage.DestinationIP.address, newAnswerMessage.DestinationIP.port);              
 
                 if (!tcpClient.Connected)
                 {
                     var c = tcpClient.Client;
-                    tcpClient.ConnectAsync(localAddr, ((IPEndPoint)c.RemoteEndPoint).Port);
+                    tcpClient.ConnectAsync(LocalAddr, ((IPEndPoint)c.RemoteEndPoint).Port);
                 }
 
                 NetworkStream stream = tcpClient.GetStream();
@@ -137,13 +134,11 @@ namespace BusinessLogic
                     {
                         Console.WriteLine("Method: {0}, client on port {1}", "Client", client.Client.RemoteEndPoint.ToString());
                         try
-                        {
-                            IPAddress localAddr = IPAddress.Parse("127.0.0.1");
-                            
+                        {  
                             if (!client.Connected)
                             {
                                 var c = client.Client;
-                                client.ConnectAsync(localAddr, ((IPEndPoint)c.RemoteEndPoint).Port);
+                                client.ConnectAsync(LocalAddr, ((IPEndPoint)c.RemoteEndPoint).Port);
                             }
                             
                             NetworkStream stream = client.GetStream();
@@ -192,11 +187,8 @@ namespace BusinessLogic
             TcpListener server = null;
             try
             {
-                IPAddress localAddr = IPAddress.Parse("127.0.0.1");
-
                 // TcpListener server = new TcpListener(port);
-                server = new TcpListener(localAddr, port);
-                Console.WriteLine("Method: {0}, new TcpListener {1}:{2}", "Server", localAddr, port);
+                server = new TcpListener(LocalAddr, port);               
 
                 // Start listening for client requests.
                 server.Start();
@@ -221,7 +213,7 @@ namespace BusinessLogic
                     if (!client.Connected)
                     {
                         var c = client.Client;
-                        client.ConnectAsync(localAddr, ((IPEndPoint)c.RemoteEndPoint).Port);
+                        client.ConnectAsync(LocalAddr, ((IPEndPoint)c.RemoteEndPoint).Port);
                     }
 
                     // Get a stream object for reading and writing
@@ -269,19 +261,19 @@ namespace BusinessLogic
         {
 
 
-            // Haben wir diese Nachricht schonmal gesehen
-            if (self.seenMessages.Any(x => x.TimeStamp == message.TimeStamp && x.SourceId == message.SourceId))
-            {
-                return;
-            }
-            else
-            {
-                self.seenMessages.Add(message);
-                if (self.seenMessages.Count > 1500)
-                {
-                    self.seenMessages.RemoveRange(0, 500);
-                }
-            }
+            //// Haben wir diese Nachricht schonmal gesehen
+            //if (self.seenMessages.Any(x => x.TimeStamp == message.TimeStamp && x.SourceId == message.SourceId))
+            //{
+            //    return;
+            //}
+            //else
+            //{
+            //    self.seenMessages.Add(message);
+            //    if (self.seenMessages.Count > 1500)
+            //    {
+            //        self.seenMessages.RemoveRange(0, 500);
+            //    }
+            //}
 
 
             switch (message.Type)

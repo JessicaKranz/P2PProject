@@ -101,7 +101,7 @@ namespace PeerToPeerCloneA
                 {
 
                 },
-                requestAddress = new IP("127.0.0.1", 13000),
+                requestAddress = new IP("127.0.0.1", 13300),
                 knownStablePeers = new List<IP>()
                 {
                     new IP("127.0.0.1", 13100),
@@ -113,13 +113,23 @@ namespace PeerToPeerCloneA
 
             TcpConnection tcpConnection = new TcpConnection();
             //JOIN
-            //peer is not inside the network
+            //peer is not inside the network            
+            tcpConnection.StartServers(self);
+            Thread.Sleep(1000);
             if (self.tcpClientAddresses.Count == 0)
             {
-                var selectedStablePeer = self.knownStablePeers.ElementAt(random.Next(self.knownStablePeers.Count));
-                new Thread(o => tcpConnection.Join(self, self.GetNextFreePort(), selectedStablePeer)).Start();
+                //overlay mode
+                //var selectedStablePeer = self.knownStablePeers.ElementAt(random.Next(self.knownStablePeers.Count));
+                //new Thread(o => tcpConnection.Join(self, self.GetNextFreePort(), selectedStablePeer)).Start();
+
+                //groupchat mode
+                foreach(var stablePeer in self.knownStablePeers)
+                {
+                    new Thread(o => tcpConnection.Join(self, self.GetNextFreePort(), stablePeer)).Start();
+                    Thread.Sleep(1000);
+
+                }
             }
-            tcpConnection.StartServersAndClients(self);
         }
     }
 }
