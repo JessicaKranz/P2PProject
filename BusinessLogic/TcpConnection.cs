@@ -231,7 +231,9 @@ namespace BusinessLogic
                     {
                         // Translate data bytes to a ASCII string.
                         data = System.Text.Encoding.ASCII.GetString(bytes, 0, i);
-                        Console.WriteLine("You Got a Message with this Header: {0}", data.TrimEnd('-'));
+                        //Console.WriteLine("You Got a Message with this Header: {0}", data.TrimEnd('-'));
+                                             
+                        Console.WriteLine(" Message : '{0}'",data.Substring(157,100).TrimEnd('-').Trim('}'));
                         Console.WriteLine("Enter you Answer Here : ");
                         try
                         {
