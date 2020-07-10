@@ -19,8 +19,8 @@ namespace Datenmodelle
         public List<GroupChat> myGroupChats { get; set; }
 
         public IP requestAddress { get; set; }
-        public List<IP> serverAddresses { get; set; }                            // was ist das genau?
-        public List<IP> tcpClientAddresses { get; set; }                         // was ist das genau?
+        public List<IP> serverAddresses { get; set; }
+        public List<IP> tcpClientAddresses { get; set; }
         /// <summary>
         /// Dies sind die Nachbarn
         /// </summary>

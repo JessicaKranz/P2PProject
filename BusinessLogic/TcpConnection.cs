@@ -52,7 +52,8 @@ namespace BusinessLogic
                 DestinationIP = IpToJoin,
                 SourceIP = OriginIp,
                 SourceId = self.myPeerID,
-                Ttl = 5
+                Ttl = 5,
+                ChatMessage = "System internal join message"
             };
 
             string message = FillSpace(newAnswerMessage);
@@ -89,6 +90,10 @@ namespace BusinessLogic
                 try
                 {
                     Message messageObj = JsonConvert.DeserializeObject<Message>(responseData.TrimEnd('-'));
+                    Console.WriteLine("\n");
+                    //Console.WriteLine("Send from : {0}",message.SourceIP);
+                    Console.WriteLine("Send at : '{0}'", messageObj.TimeStamp);
+                    Console.WriteLine("Message : '{0}'", messageObj.ChatMessage);
                     ProzessNachricht(self, stream, responseData, messageObj, tcpClient);
                 }
                 catch (Exception ex)
@@ -255,9 +260,7 @@ namespace BusinessLogic
                         // Translate data bytes to a ASCII string.
                         data = System.Text.Encoding.ASCII.GetString(bytes, 0, i);
                         //Console.WriteLine("You Got a Message with this Header: {0}", data.TrimEnd('-'));
-                                             
-                        
-                       
+                                                                                     
                         try
                         {
                             Message message = JsonConvert.DeserializeObject<Message>(data.TrimEnd('-'));
@@ -265,8 +268,8 @@ namespace BusinessLogic
                             //Console.WriteLine("Send from : {0}",message.SourceIP);
                             Console.WriteLine("Send at : '{0}'", message.TimeStamp);
                             Console.WriteLine("Message : '{0}'", message.ChatMessage);
-                            Console.WriteLine("Enter you Answer Here : ");
-
+                            Console.WriteLine(data.TrimEnd('-'));
+                            Console.WriteLine("\n");
                             ProzessNachricht(self, stream, data, message, client);
                         }
                         catch (Exception ex)
@@ -317,7 +320,7 @@ namespace BusinessLogic
             {
 
                 case Message.Types.PersonalMessage:
-                    OnChatMessageReceived(data, stream);
+                    //OnChatMessageReceived(data, stream);
 
                     break;
                 case Message.Types.GroupMessage:
@@ -335,8 +338,11 @@ namespace BusinessLogic
                 case Message.Types.JoinResponse:
                     OnPeerJoinResponse(self, message, stream, tcpClient);
                     break;
+                case Message.Types.JoinAcknowledge:
+                    OnPeerJoinAcknowledge(self, message, stream);
+                    break;
                 default:
-                    OnChatMessageReceived(data, stream);
+                    //OnChatMessageReceived(data, stream);
                     break;
             }
         }
@@ -350,12 +356,13 @@ namespace BusinessLogic
             {
                 Type = Message.Types.JoinResponse,
                 DestinationIP = incommingMessage.SourceIP,
-                SourceIP = self.GetNextFreePort()           
+                SourceIP = self.GetNextFreePort(),
+                ChatMessage = "Somebody tries to join"
             };
             
-            //if peer has no neighbors or TTL == 0, it'll transmits its own address
-            if (self.tcpClientAddresses.Count == 0 || incommingMessage.Ttl == 0)
-            {
+            ////if peer has no neighbors or TTL == 0, it'll transmits its own address
+            //if (self.tcpClientAddresses.Count == 0 || incommingMessage.Ttl == 0)
+            //{
                 string send = FillSpace(newAnswerMessage);                              
 
                 Byte[] sendableMessage = System.Text.Encoding.ASCII.GetBytes(send);
@@ -368,39 +375,67 @@ namespace BusinessLogic
 
                 StartServer(self, newAnswerMessage.SourceIP);               
                
-            }
-            else
-            {
-                // select one known neighbor and send it back
-                // ...
-                if (incommingMessage.Ttl > 0)
-                {
-                    incommingMessage.Ttl--;
-                    // todo does the clients neighbor have an open port to speak with us?
-                    var nextRandomWalkStep = self.tcpClientAddresses.ElementAt(random.Next(self.tcpClientAddresses.Count));
-                    incommingMessage.DestinationIP = nextRandomWalkStep;
-                    OnPeerJoinRequest(self, incommingMessage, stream);
-                }
-            }            
+            //}
+            //else
+            //{
+            //    // select one known neighbor and send it back
+            //    // ...
+            //    if (incommingMessage.Ttl > 0)
+            //    {
+            //        incommingMessage.Ttl--;
+            //        // todo does the clients neighbor have an open port to speak with us?
+            //        var nextRandomWalkStep = self.tcpClientAddresses.ElementAt(random.Next(self.tcpClientAddresses.Count));
+            //        incommingMessage.DestinationIP = nextRandomWalkStep;
+            //        OnPeerJoinRequest(self, incommingMessage, stream);
+            //    }
+            //}            
         }
 
         private void OnPeerJoinResponse(MyPeerData self, Message message, NetworkStream stream, TcpClient tcpClient)
         {
             Console.WriteLine("Called OnPeerJoinResponse");
 
-            stream.Close(); //todo
-            tcpClient.Close();
 
             StartServer(self, message.DestinationIP);
 
             Thread.Sleep(1000);
 
             StartTcpClient(self, message.SourceIP);
+
+            Message newAnswerMessage = new Message
+            {
+                Type = Message.Types.JoinAcknowledge,
+                DestinationIP = message.SourceIP,
+                SourceIP = message.DestinationIP,
+                ChatMessage = "Somebody is going to join"
+            };
+
+            string send = FillSpace(newAnswerMessage);
+
+            Byte[] sendableMessage = System.Text.Encoding.ASCII.GetBytes(send);
+
+            // Send back a response.
+            stream.Write(sendableMessage, 0, sendableMessage.Length);
+            string data = System.Text.Encoding.ASCII.GetString(sendableMessage, 0, sendableMessage.Length);
+
+            Console.WriteLine("Acknowledge: {0}", data.TrimEnd('-'));
+
+            stream.Close(); //todo
+            tcpClient.Close();
+        }
+
+        private void OnPeerJoinAcknowledge(MyPeerData self, Message message, NetworkStream stream)
+        {
+
+            Thread.Sleep(1000);
+
+            StartTcpClient(self, message.SourceIP);
+
         }
 
         public void OnChatMessageReceived(string data, NetworkStream stream)
         {
-
+            Console.WriteLine("Received chat message");
             byte[] message = System.Text.Encoding.ASCII.GetBytes(data);
             // Send back a response.
              stream.Write(message, 0, message.Length);
@@ -411,7 +446,7 @@ namespace BusinessLogic
             self.serverAddresses.Add(partnerIp);
             new Thread(o => this.Server(self, partnerIp.port)).Start();
 
-            Console.WriteLine("Started server on {0}:{1}", partnerIp.address, partnerIp.port);
+            //Console.WriteLine("Started server on {0}:{1}", partnerIp.address, partnerIp.port);
         }
 
         private void StartTcpClient(MyPeerData self, IP myIp)
@@ -421,7 +456,7 @@ namespace BusinessLogic
 
             new Thread(o => this.Client(self)).Start();
 
-            Console.WriteLine("Started TCP client on {0}:{1}", myIp.address, myIp.port);
+            //Console.WriteLine("Started TCP client on {0}:{1}", myIp.address, myIp.port);
         }
 
 
@@ -451,7 +486,15 @@ namespace BusinessLogic
                 });
                 thread.Start();
                 thread.Join();
-                Console.WriteLine(value);           
+                if (value)
+                {
+                    Console.WriteLine("Succeeded - Connection to peer at {0}:{1}", stablePeer.address, stablePeer.port);
+                    //self.tcpClientAddresses.Add(new IP(stablePeer.address, stablePeer.port));
+                }
+                else
+                {
+                    Console.WriteLine("Failed - Connection to peer at {0}:{1}", stablePeer.address, stablePeer.port);
+                }
             }
             if(self.knownStablePeers.Count == 0) { value = false; }
             return value;

@@ -108,11 +108,11 @@ namespace PeerToPeerCloneA
             TcpConnection tcpConnection = new TcpConnection();         
             tcpConnection.StartServers(self);
             Thread.Sleep(1000);
-            if (self.tcpClientAddresses.Count == 0)
+            if (self.tcpClientAddresses.Count < 2)
             {
 
                 bool joinedSuccessfull = false;
-                while(!joinedSuccessfull)
+                while (self.tcpClientAddresses.Count < 2)
                 {
                     joinedSuccessfull = tcpConnection.ManageJoin(self);
                     Thread.Sleep(15000);
