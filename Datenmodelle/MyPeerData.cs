@@ -20,7 +20,7 @@ namespace Datenmodelle
 
         public IP requestAddress { get; set; }
         public List<IP> serverAddresses { get; set; }
-        public List<IP> tcpClientAddresses { get; set; }
+        public Dictionary<int, IP> tcpClientAddresses { get; set; }
         /// <summary>
         /// Dies sind die Nachbarn
         /// </summary>
@@ -46,7 +46,7 @@ namespace Datenmodelle
 
             myGroupChats = new List<GroupChat>();
             serverAddresses = new List<IP>();
-            tcpClientAddresses = new List<IP>();
+            tcpClientAddresses = new Dictionary<int, IP>();
             knownStablePeers = new List<IP>();
         }
         

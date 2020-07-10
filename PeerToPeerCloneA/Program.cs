@@ -1,5 +1,6 @@
 ﻿using BusinessLogic;
 using Datenmodelle;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 
@@ -92,7 +93,7 @@ namespace PeerToPeerCloneA
                     new IP("127.0.0.1", 13300),
                     //new IP("127.0.0.1", 13003)
                 },
-                tcpClientAddresses = new List<IP>()
+                tcpClientAddresses = new Dictionary<int, IP>()
                 {
 
                 },
@@ -103,6 +104,8 @@ namespace PeerToPeerCloneA
                     new IP("127.0.0.1", 13200),
                 },
             };
+
+            Console.WriteLine(self.myPeerID);
 
 
             TcpConnection tcpConnection = new TcpConnection();         
@@ -115,7 +118,7 @@ namespace PeerToPeerCloneA
                 while (self.tcpClientAddresses.Count < 2)
                 {
                     joinedSuccessfull = tcpConnection.ManageJoin(self);
-                    Thread.Sleep(15000);
+                    Thread.Sleep(17000);
                 }
             }
         }

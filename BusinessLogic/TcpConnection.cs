@@ -148,6 +148,7 @@ namespace BusinessLogic
                     {
                         Type = Message.Types.PersonalMessage,
                         ChatMessage = line,
+                        SourceId = self.myPeerID
                         //AuthorName = author
                         
                     };
@@ -265,7 +266,7 @@ namespace BusinessLogic
                         {
                             Message message = JsonConvert.DeserializeObject<Message>(data.TrimEnd('-'));
                             Console.WriteLine("\n");
-                            //Console.WriteLine("Send from : {0}",message.SourceIP);
+                            Console.WriteLine("Send from : {0}",message.SourceId);
                             Console.WriteLine("Send at : '{0}'", message.TimeStamp);
                             Console.WriteLine("Message : '{0}'", message.ChatMessage);
                             Console.WriteLine(data.TrimEnd('-'));
@@ -320,7 +321,7 @@ namespace BusinessLogic
             {
 
                 case Message.Types.PersonalMessage:
-                    //OnChatMessageReceived(data, stream);
+                    OnChatMessageReceived(data, stream);
 
                     break;
                 case Message.Types.GroupMessage:
@@ -350,14 +351,20 @@ namespace BusinessLogic
 
         public void OnPeerJoinRequest(MyPeerData self, Message incommingMessage, NetworkStream stream)
         {
-           /// Console.WriteLine("Called OnPeerJoinRequest");
+            /// Console.WriteLine("Called OnPeerJoinRequest");
+
+            if (self.tcpClientAddresses.ContainsKey(incommingMessage.SourceId))
+            {
+                return;
+            }
 
             Message newAnswerMessage = new Message
             {
                 Type = Message.Types.JoinResponse,
                 DestinationIP = incommingMessage.SourceIP,
                 SourceIP = self.GetNextFreePort(),
-                ChatMessage = "Somebody tries to join"
+                ChatMessage = "Somebody tries to join",
+                SourceId = self.myPeerID
             };
             
             ////if peer has no neighbors or TTL == 0, it'll transmits its own address
@@ -400,14 +407,15 @@ namespace BusinessLogic
 
             Thread.Sleep(1000);
 
-            StartTcpClient(self, message.SourceIP);
+            StartTcpClient(self, message.SourceIP, message.SourceId);
 
             Message newAnswerMessage = new Message
             {
                 Type = Message.Types.JoinAcknowledge,
                 DestinationIP = message.SourceIP,
                 SourceIP = message.DestinationIP,
-                ChatMessage = "Somebody is going to join"
+                ChatMessage = "Somebody is going to join",
+                SourceId = self.myPeerID
             };
 
             string send = FillSpace(newAnswerMessage);
@@ -429,7 +437,7 @@ namespace BusinessLogic
 
             Thread.Sleep(1000);
 
-            StartTcpClient(self, message.SourceIP);
+            StartTcpClient(self, message.SourceIP, message.SourceId);
 
         }
 
@@ -449,10 +457,13 @@ namespace BusinessLogic
             //Console.WriteLine("Started server on {0}:{1}", partnerIp.address, partnerIp.port);
         }
 
-        private void StartTcpClient(MyPeerData self, IP myIp)
+        private void StartTcpClient(MyPeerData self, IP otherPeerIp, int otherPeerId)
         {
-            self.tcpClients.Add(new TcpClient(myIp.address, myIp.port));
-            self.tcpClientAddresses.Add(new IP(myIp.address, myIp.port));
+            self.tcpClients.Add(new TcpClient(otherPeerIp.address, otherPeerIp.port));
+            if (!self.tcpClientAddresses.ContainsKey(otherPeerId))
+            {
+                self.tcpClientAddresses.Add(otherPeerId, new IP(otherPeerIp.address, otherPeerIp.port));
+            }
 
             new Thread(o => this.Client(self)).Start();
 

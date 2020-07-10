@@ -93,7 +93,7 @@ namespace PeerToPeerCloneB
                     new IP("127.0.0.1", 13100),
                     //new IP("127.0.0.1", 13003)
                 },
-                tcpClientAddresses = new List<IP>()
+                tcpClientAddresses = new Dictionary<int, IP>()
                 {
 
                 },
@@ -104,6 +104,8 @@ namespace PeerToPeerCloneB
                     new IP("127.0.0.1", 13300),
                 },
             };
+
+            Console.WriteLine(self.myPeerID);
 
 
             TcpConnection tcpConnection = new TcpConnection();
@@ -116,7 +118,7 @@ namespace PeerToPeerCloneB
                 while (self.tcpClientAddresses.Count < 2)
                 {
                     joinedSuccessfull = tcpConnection.ManageJoin(self);
-                    Thread.Sleep(15000);
+                    Thread.Sleep(13000);
                 }
             }
 
