@@ -17,7 +17,7 @@ namespace PeerToPeerCloneC
                     new IP("127.0.0.1", 13200),
                     //new IP("127.0.0.1", 13003)
                 },
-                tcpClientAddresses = new Dictionary<int, IP>()
+                tcpClientAddresses = new List<KeyValuePair<int, IP>>()
                 {
 
                 },
@@ -25,10 +25,10 @@ namespace PeerToPeerCloneC
                 knownStablePeers = new List<IP>()
                 {
                     new IP("127.0.0.1", 13100),
-                    new IP("127.0.0.1", 13300),
+                    new IP("127.0.0.1", 13000),
 
                 },
-                
+                MyName = "PeerC"
             };
 
             Console.WriteLine(self.myPeerID);

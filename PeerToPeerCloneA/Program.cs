@@ -90,19 +90,20 @@ namespace PeerToPeerCloneA
             {
                 serverAddresses = new List<IP>()
                 {
-                    new IP("127.0.0.1", 13300),
+                    new IP("127.0.0.1", 13000),
                     //new IP("127.0.0.1", 13003)
                 },
-                tcpClientAddresses = new Dictionary<int, IP>()
+                tcpClientAddresses = new List<KeyValuePair<int, IP>>()
                 {
 
                 },
-                requestAddress = new IP("127.0.0.1", 13300),
+                requestAddress = new IP("127.0.0.1", 13000),
                 knownStablePeers = new List<IP>()
                 {
                     new IP("127.0.0.1", 13100),
                     new IP("127.0.0.1", 13200),
                 },
+                MyName = "PeerA"
             };
 
             Console.WriteLine(self.myPeerID);

@@ -19,12 +19,14 @@ namespace Datenmodelle
         public List<GroupChat> myGroupChats { get; set; }
 
         public IP requestAddress { get; set; }
-        public List<IP> serverAddresses { get; set; }
-        public Dictionary<int, IP> tcpClientAddresses { get; set; }
+        public List<IP> serverAddresses { get; set; }       
+        public List<KeyValuePair<int, IP>> ownAdresses { get; set; } = new List<KeyValuePair<int, IP>>();
+        public List<KeyValuePair<int, IP>> tcpClientAddresses { get; set; } = new List<KeyValuePair<int, IP>>();
+
         /// <summary>
         /// Dies sind die Nachbarn
         /// </summary>
-        public List<TcpClient> tcpClients { get; set; } = new List<TcpClient>(); //neighbours
+        public List<KeyValuePair<int, TcpClient>> tcpClients { get; set; } = new List<KeyValuePair<int, TcpClient>>(); //neighbours
 
         public List<Message> seenMessages { get; set; } = new List<Message>();
         public List<IP> knownStablePeers { get; set; } = new List<IP>  
@@ -45,8 +47,7 @@ namespace Datenmodelle
             myIPAddress = GetLocalIPAddress();
 
             myGroupChats = new List<GroupChat>();
-            serverAddresses = new List<IP>();
-            tcpClientAddresses = new Dictionary<int, IP>();
+            serverAddresses = new List<IP>();           
             knownStablePeers = new List<IP>();
         }
         

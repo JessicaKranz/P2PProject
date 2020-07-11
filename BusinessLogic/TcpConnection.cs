@@ -40,7 +40,7 @@ namespace BusinessLogic
             {
                 Console.WriteLine(ex.Message);
             }
-            
+
         }
 
 
@@ -58,12 +58,12 @@ namespace BusinessLogic
 
             string message = FillSpace(newAnswerMessage);
 
-            Byte[] data = System.Text.Encoding.ASCII.GetBytes(message);
+            Byte[] data = Encoding.ASCII.GetBytes(message);
 
             try
             {
                 TcpClient tcpClient = new TcpClient(newAnswerMessage.DestinationIP.address, newAnswerMessage.DestinationIP.port);
-                Console.WriteLine("Method: {0}, new TcpClient {1}:{2}", "Join", newAnswerMessage.DestinationIP.address, newAnswerMessage.DestinationIP.port);              
+                Console.WriteLine("Method: {0}, new TcpClient {1}:{2}", "Join", newAnswerMessage.DestinationIP.address, newAnswerMessage.DestinationIP.port);
 
                 if (!tcpClient.Connected)
                 {
@@ -84,7 +84,7 @@ namespace BusinessLogic
                 // Read the first batch of the TcpServer response bytes.
                 Int32 bytes = stream.Read(data, 0, data.Length);
                 responseData = System.Text.Encoding.ASCII.GetString(data, 0, data.Length);
-               
+
                 Console.WriteLine("Received: {0}", responseData.TrimEnd('-'));
 
                 try
@@ -119,6 +119,11 @@ namespace BusinessLogic
                 //Console.WriteLine("SocketException: {0}", e);
                 return false;
             }
+            catch (System.IO.IOException)
+            {
+                Console.WriteLine("Called Join after quit");
+                return false;
+            }
         }
 
 
@@ -129,74 +134,95 @@ namespace BusinessLogic
             while (go_on)
             {
                 Thread.Sleep(300);
-               /* if (self.Authorgiven == false)
-                {
-                    Console.WriteLine("Give yourself a Name : ");
+                /* if (self.Authorgiven == false)
+                 {
+                     Console.WriteLine("Give yourself a Name : ");
 
 
-                    author = Console.ReadLine();
-                    self.Authorgiven = true;
-                }
-               */
-               // Console.WriteLine("Enter your Message: ");
+                     author = Console.ReadLine();
+                     self.Authorgiven = true;
+                 }
+                */
+                // Console.WriteLine("Enter your Message: ");
                 string line = Console.ReadLine();
 
 
                 if (line.Length != 0)
                 {
-                    Message chatMessage = new Message
+                    Message messageObj = new Message();
+                    if (!line.Equals("quit"))
                     {
-                        Type = Message.Types.PersonalMessage,
-                        ChatMessage = line,
-                        SourceId = self.myPeerID
-                        //AuthorName = author
-                        
-                    };
+                        messageObj = new Message
+                        {
+                            Type = Message.Types.PersonalMessage,
+                            ChatMessage = line,
+                            SourceId = self.myPeerID
+                            //AuthorName = author
+                        };
+                    }
 
-                    string message = FillSpace(chatMessage);
+                    if (line.Equals("quit"))
+                    {
+                        messageObj = new Message
+                        {
+                            Type = Message.Types.KillConnection,
+                            ChatMessage = line,
+                            SourceId = self.myPeerID
+                            //AuthorName = author
+                        };
 
-                    
+                    }
+
+                    string message = FillSpace(messageObj);
 
                     Byte[] data = System.Text.Encoding.ASCII.GetBytes(message);
 
                     foreach (var client in self.tcpClients)
                     {
-                       // Console.WriteLine("Method: {0}, client on port {1}", "Client", client.Client.RemoteEndPoint.ToString());
+                        // Console.WriteLine("Method: {0}, client on port {1}", "Client", client.Client.RemoteEndPoint.ToString());
                         try
-                        {  
-                            if (!client.Connected)
+                        {
+                            if (!client.Value.Connected)
                             {
-                                var c = client.Client;
-                                client.ConnectAsync(LocalAddr, ((IPEndPoint)c.RemoteEndPoint).Port);
+                                var c = client.Value.Client;
+                                c.ConnectAsync(LocalAddr, ((IPEndPoint)c.RemoteEndPoint).Port);
                             }
-                            
-                            NetworkStream stream = client.GetStream();
 
-                            // Send the message to the connected TcpServer.
-                            stream.Write(data, 0, data.Length);
+                            NetworkStream stream = client.Value.GetStream();
 
-                            // Receive the TcpServer.response.
+                            try
+                            {
+                                // Send the message to the connected TcpServer.
+                                stream.Write(data, 0, data.Length);
 
-                            // String to store the response ASCII representation.
-                            String responseData = String.Empty;
+                                // Receive the TcpServer.response.
 
-                            // Read the first batch of the TcpServer response bytes.
-                            Int32 bytes = stream.Read(data, 0, data.Length);
-                            responseData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
+                                // String to store the response ASCII representation.
+                                String responseData = String.Empty;
 
-                            // i dont wanna message myself
-                           // Console.WriteLine("Received: {0}", responseData.TrimEnd('-'));
+                                // Read the first batch of the TcpServer response bytes.
+                                Int32 bytes = stream.Read(data, 0, data.Length);
+                                responseData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
 
-                            //if (line.Equals("quit"))
-                            //{
-                            //    go_on = false;
-                            //    // Close everything.
-                            //stream.Close();
-                            //client.Close();
-                            //Console.WriteLine("Disconnected");
-                            //}
-                            //}
 
+
+
+
+                                if (line.Equals("quit"))
+                                {
+                                    go_on = false;
+                                    // Close everything.
+                                    System.Threading.Thread.Sleep(2000);
+                                    stream.Close();
+                                    client.Value.Close();
+                                    Console.WriteLine("Disconnected");
+                                }
+
+                            }
+                            catch (Exception ex)
+                            {
+                                self.tcpClients.Remove(client);
+                            }
                         }
                         catch (ArgumentNullException e)
                         {
@@ -219,7 +245,7 @@ namespace BusinessLogic
             try
             {
                 // TcpListener server = new TcpListener(port);
-                server = new TcpListener(LocalAddr, port);               
+                server = new TcpListener(LocalAddr, port);
 
                 // Start listening for client requests.
                 server.Start();
@@ -237,7 +263,7 @@ namespace BusinessLogic
                     // You could also use server.AcceptSocket() here.
                     TcpClient client = server.AcceptTcpClient();
                     Console.WriteLine("Connected!");
-                    
+
 
                     data = null;
 
@@ -250,34 +276,41 @@ namespace BusinessLogic
 
                     // Get a stream object for reading and writing
                     NetworkStream stream = client.GetStream();
-                   
-
 
                     int i;
 
-                    // Loop to receive all the data sent by the client.
-                    while ((i = stream.Read(bytes, 0, bytes.Length)) != 0)
+                    try
                     {
-                        // Translate data bytes to a ASCII string.
-                        data = System.Text.Encoding.ASCII.GetString(bytes, 0, i);
-                        //Console.WriteLine("You Got a Message with this Header: {0}", data.TrimEnd('-'));
-                                                                                     
-                        try
+                        // Loop to receive all the data sent by the client.
+                        while ((i = stream.Read(bytes, 0, bytes.Length)) != 0)
                         {
-                            Message message = JsonConvert.DeserializeObject<Message>(data.TrimEnd('-'));
-                            Console.WriteLine("\n");
-                            Console.WriteLine("Send from : {0}",message.SourceId);
-                            Console.WriteLine("Send at : '{0}'", message.TimeStamp);
-                            Console.WriteLine("Message : '{0}'", message.ChatMessage);
-                            Console.WriteLine(data.TrimEnd('-'));
-                            Console.WriteLine("\n");
-                            ProzessNachricht(self, stream, data, message, client);
+                            // Translate data bytes to a ASCII string.
+                            data = System.Text.Encoding.ASCII.GetString(bytes, 0, i);
+                            //Console.WriteLine("You Got a Message with this Header: {0}", data.TrimEnd('-'));
+
+                            try
+                            {
+                                Message message = JsonConvert.DeserializeObject<Message>(data.TrimEnd('-'));
+                                Console.WriteLine("\n");
+                                Console.WriteLine("Send from : {0}", message.SourceId);
+                                Console.WriteLine("Send at : '{0}'", message.TimeStamp);
+                                Console.WriteLine("Message : '{0}'", message.ChatMessage);
+                                //Console.WriteLine(data.TrimEnd('-'));
+                                Console.WriteLine("\n");
+                                ProzessNachricht(self, stream, data, message, client);
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine("Could not deserialize malformed message. Message was {0}. Failed with {1}", data, ex.Message);
+                            }
                         }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine("Could not deserialize malformed message. Message was {0}. Failed with {1}", data, ex.Message);
-                        }                                             
                     }
+                    catch (Exception ex)
+                    {
+                        stream.Close();
+                        client.Close();
+                    }
+
                     // Shutdown and end connection
                     //client.Close();
                 }
@@ -342,6 +375,9 @@ namespace BusinessLogic
                 case Message.Types.JoinAcknowledge:
                     OnPeerJoinAcknowledge(self, message, stream);
                     break;
+                case Message.Types.KillConnection:
+                    OnPeerKillConnection(self, message, stream, tcpClient);
+                    break;
                 default:
                     //OnChatMessageReceived(data, stream);
                     break;
@@ -353,7 +389,7 @@ namespace BusinessLogic
         {
             /// Console.WriteLine("Called OnPeerJoinRequest");
 
-            if (self.tcpClientAddresses.ContainsKey(incommingMessage.SourceId))
+            if (self.tcpClientAddresses.Any(x => x.Key == incommingMessage.SourceId))
             {
                 return;
             }
@@ -364,24 +400,25 @@ namespace BusinessLogic
                 DestinationIP = incommingMessage.SourceIP,
                 SourceIP = self.GetNextFreePort(),
                 ChatMessage = "Somebody tries to join",
-                SourceId = self.myPeerID
+                SourceId = self.myPeerID,
+                DestinationId = incommingMessage.SourceId
             };
-            
+
             ////if peer has no neighbors or TTL == 0, it'll transmits its own address
             //if (self.tcpClientAddresses.Count == 0 || incommingMessage.Ttl == 0)
             //{
-                string send = FillSpace(newAnswerMessage);                              
+            string send = FillSpace(newAnswerMessage);
 
-                Byte[] sendableMessage = System.Text.Encoding.ASCII.GetBytes(send);
+            Byte[] sendableMessage = System.Text.Encoding.ASCII.GetBytes(send);
 
-                // Send back a response.
-                stream.Write(sendableMessage, 0, sendableMessage.Length);
-                string data = System.Text.Encoding.ASCII.GetString(sendableMessage, 0, sendableMessage.Length);
+            // Send back a response.
+            stream.Write(sendableMessage, 0, sendableMessage.Length);
+            string data = System.Text.Encoding.ASCII.GetString(sendableMessage, 0, sendableMessage.Length);
 
-                Console.WriteLine("Sent: {0}", data.TrimEnd('-'));
+            Console.WriteLine("Sent: {0}", data.TrimEnd('-'));
 
-                StartServer(self, newAnswerMessage.SourceIP);               
-               
+            StartServer(self, newAnswerMessage.SourceIP, newAnswerMessage.DestinationId);
+
             //}
             //else
             //{
@@ -403,7 +440,7 @@ namespace BusinessLogic
             Console.WriteLine("Called OnPeerJoinResponse");
 
 
-            StartServer(self, message.DestinationIP);
+            StartServer(self, message.DestinationIP, message.SourceId);
 
             Thread.Sleep(1000);
 
@@ -434,11 +471,27 @@ namespace BusinessLogic
 
         private void OnPeerJoinAcknowledge(MyPeerData self, Message message, NetworkStream stream)
         {
-
             Thread.Sleep(1000);
-
+            //self.ownAdresses.Add(new KeyValuePair<int, IP>(message.SourceId, message.DestinationIP));
             StartTcpClient(self, message.SourceIP, message.SourceId);
+        }
 
+        private void OnPeerKillConnection(MyPeerData self, Message message, NetworkStream stream, TcpClient tcpClient)
+        {
+
+            var ports = self.ownAdresses.Where(x => x.Key == message.SourceId).Select(y => y.Value.port).ToList();
+
+            foreach(var port in ports)
+            {
+                self.tcpClients.RemoveAll(x => x.Key == message.SourceId);
+            }
+
+
+            //lösche tcpClient der den port hat, den laut ownAdressesliste der peer hat, der quittet
+            self.serverAddresses.RemoveAll(x => (x.port == ((IPEndPoint)tcpClient.Client.LocalEndPoint).Port));
+
+            stream.Close();
+            tcpClient.Close();
         }
 
         public void OnChatMessageReceived(string data, NetworkStream stream)
@@ -446,11 +499,12 @@ namespace BusinessLogic
             Console.WriteLine("Received chat message");
             byte[] message = System.Text.Encoding.ASCII.GetBytes(data);
             // Send back a response.
-             stream.Write(message, 0, message.Length);
+            stream.Write(message, 0, message.Length);
         }
 
-        private void StartServer(MyPeerData self, IP partnerIp)
+        private void StartServer(MyPeerData self, IP partnerIp, int partnerId)
         {
+            self.ownAdresses.Add(new KeyValuePair<int, IP>(partnerId, partnerIp));
             self.serverAddresses.Add(partnerIp);
             new Thread(o => this.Server(self, partnerIp.port)).Start();
 
@@ -459,10 +513,10 @@ namespace BusinessLogic
 
         private void StartTcpClient(MyPeerData self, IP otherPeerIp, int otherPeerId)
         {
-            self.tcpClients.Add(new TcpClient(otherPeerIp.address, otherPeerIp.port));
-            if (!self.tcpClientAddresses.ContainsKey(otherPeerId))
+            self.tcpClients.Add(new KeyValuePair<int, TcpClient>(otherPeerId, new TcpClient(otherPeerIp.address, otherPeerIp.port)));
+            if (!self.tcpClientAddresses.Any(x => x.Key == otherPeerId))
             {
-                self.tcpClientAddresses.Add(otherPeerId, new IP(otherPeerIp.address, otherPeerIp.port));
+                self.tcpClientAddresses.Add(new KeyValuePair<int, IP>(otherPeerId, new IP(otherPeerIp.address, otherPeerIp.port)));
             }
 
             new Thread(o => this.Client(self)).Start();
@@ -490,7 +544,7 @@ namespace BusinessLogic
             //groupchat mode
             bool value = true; // Used to store the return value
             foreach (var stablePeer in self.knownStablePeers)
-            {             
+            {
                 var thread = new Thread(() =>
                 {
                     value = value && Join(self, self.GetNextFreePort(), stablePeer);
@@ -507,7 +561,7 @@ namespace BusinessLogic
                     Console.WriteLine("Failed - Connection to peer at {0}:{1}", stablePeer.address, stablePeer.port);
                 }
             }
-            if(self.knownStablePeers.Count == 0) { value = false; }
+            if (self.knownStablePeers.Count == 0) { value = false; }
             return value;
 
         }
@@ -517,15 +571,15 @@ namespace BusinessLogic
 
         private Boolean WillIBecomeANewNeighbour(MyPeerData self)
         {
-            
+
             Random rand1 = new Random();
             if (self.tcpClients.Count < 3)
             {
                 return true;
             }
-            else 
-            { 
-                return rand1.NextDouble() < (1 / self.tcpClients.Count); 
+            else
+            {
+                return rand1.NextDouble() < (1 / self.tcpClients.Count);
             }
         }
 

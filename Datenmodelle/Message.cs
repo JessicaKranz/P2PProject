@@ -17,7 +17,8 @@ namespace Datenmodelle
             //These Are Jessies
             JoinRequest,
             JoinResponse,
-            JoinAcknowledge
+            JoinAcknowledge,
+            KillConnection
         }
         /// <summary>
         /// Type of Message characterizes each Message
