@@ -200,9 +200,9 @@ namespace BusinessLogic
                                 // String to store the response ASCII representation.
                                 String responseData = String.Empty;
 
-                                // Read the first batch of the TcpServer response bytes.
-                                Int32 bytes = stream.Read(data, 0, data.Length);
-                                responseData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
+                                //// Read the first batch of the TcpServer response bytes.
+                                //Int32 bytes = stream.Read(data, 0, data.Length);
+                                //responseData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
 
 
 
@@ -354,8 +354,7 @@ namespace BusinessLogic
             {
 
                 case Message.Types.PersonalMessage:
-                    OnChatMessageReceived(data, stream);
-
+                    //client will handle it automatically
                     break;
                 case Message.Types.GroupMessage:
                     //TODO
@@ -379,7 +378,7 @@ namespace BusinessLogic
                     OnPeerKillConnection(self, message, stream, tcpClient);
                     break;
                 default:
-                    //OnChatMessageReceived(data, stream);
+                    Console.WriteLine("Could not handle message of unknown type {0}. Message was {1}", message.Type, message.ToJson());
                     break;
             }
         }
@@ -494,13 +493,6 @@ namespace BusinessLogic
             tcpClient.Close();
         }
 
-        public void OnChatMessageReceived(string data, NetworkStream stream)
-        {
-            Console.WriteLine("Received chat message");
-            byte[] message = System.Text.Encoding.ASCII.GetBytes(data);
-            // Send back a response.
-            stream.Write(message, 0, message.Length);
-        }
 
         private void StartServer(MyPeerData self, IP partnerIp, int partnerId)
         {
