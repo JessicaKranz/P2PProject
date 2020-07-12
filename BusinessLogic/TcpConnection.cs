@@ -46,6 +46,7 @@ namespace BusinessLogic
 
         public bool Join(MyPeerData self, IP OriginIp, IP IpToJoin)
         {
+            Console.WriteLine("Join {0}", self.myPeerID);
             Message newAnswerMessage = new Message
             {
                 Type = Message.Types.JoinRequest,
@@ -81,8 +82,15 @@ namespace BusinessLogic
                 // String to store the response ASCII representation.
                 String responseData = String.Empty;
 
-                // Read the first batch of the TcpServer response bytes.
-                Int32 bytes = stream.Read(data, 0, data.Length);
+                // Read the first batch of the TcpServer response bytes. 
+                try
+                {
+                    Int32 bytes = stream.Read(data, 0, data.Length);
+                }
+                catch(Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
                 responseData = System.Text.Encoding.ASCII.GetString(data, 0, data.Length);
 
               //  Console.WriteLine("Received: {0}", responseData.TrimEnd('-'));
@@ -90,6 +98,7 @@ namespace BusinessLogic
                 try
                 {
                     Message messageObj = JsonConvert.DeserializeObject<Message>(responseData.TrimEnd('-'));
+
                     Console.WriteLine("\n");
                     Console.WriteLine("Send from : {0}",messageObj.SourceId);
                     Console.WriteLine("Send at : '{0}'", messageObj.TimeStamp);
@@ -380,7 +389,7 @@ namespace BusinessLogic
                     OnPeerJoinResponse(self, message, stream, tcpClient);
                     break;
                 case Message.Types.JoinAcknowledge:
-                    OnPeerJoinAcknowledge(self, message, stream);
+                    OnPeerJoinAcknowledge(self, message, stream, tcpClient);
                     break;
                 case Message.Types.KillConnection:
                     OnPeerKillConnection(self, message, stream, tcpClient);
@@ -394,7 +403,9 @@ namespace BusinessLogic
 
         public void OnPeerJoinRequest(MyPeerData self, Message incommingMessage, NetworkStream stream)
         {
-            /// Console.WriteLine("Called OnPeerJoinRequest");
+
+            //Console.WriteLine("OnPeerJoinRequest {0}", self.myPeerID);
+          
             Thread.Sleep(1000);
 
             if (self.tcpClientAddresses.Any(x => x.Key == incommingMessage.SourceId))
@@ -445,8 +456,8 @@ namespace BusinessLogic
 
         private void OnPeerJoinResponse(MyPeerData self, Message message, NetworkStream stream, TcpClient tcpClient)
         {
-            //Console.WriteLine("Called OnPeerJoinResponse");
 
+            //Console.WriteLine("OnPeerJoinResponse {0}", self.myPeerID);
 
             StartServer(self, message.DestinationIP, message.SourceId);
 
@@ -473,12 +484,13 @@ namespace BusinessLogic
 
           //  Console.WriteLine("Acknowledge: {0}", data.TrimEnd('-'));
 
-            stream.Close(); //todo
-            tcpClient.Close();
+            //stream.Close(); //todo
+            //tcpClient.Close();
         }
 
-        private void OnPeerJoinAcknowledge(MyPeerData self, Message message, NetworkStream stream)
+        private void OnPeerJoinAcknowledge(MyPeerData self, Message message, NetworkStream stream, TcpClient tcpClient)
         {
+            Console.WriteLine("OnPeerJoinAcknowledge {0}", self.myPeerID);
             Thread.Sleep(1000);
 
             Message messagea = new Message
@@ -496,6 +508,8 @@ namespace BusinessLogic
 
             //self.ownAdresses.Add(new KeyValuePair<int, IP>(message.SourceId, message.DestinationIP));
             StartTcpClient(self, message.SourceIP, message.SourceId);
+            stream.Close();
+            tcpClient.Close();
         }
 
         private void OnPeerKillConnection(MyPeerData self, Message message, NetworkStream stream, TcpClient tcpClient)
@@ -528,7 +542,6 @@ namespace BusinessLogic
 
         private void StartTcpClient(MyPeerData self, IP otherPeerIp, int otherPeerId)
         {
-            
             if (!self.tcpClientAddresses.Any(x => x.Key == otherPeerId))
             {
                 self.tcpClients.Add(new KeyValuePair<int, TcpClient>(otherPeerId, new TcpClient(otherPeerIp.address, otherPeerIp.port)));
@@ -536,10 +549,6 @@ namespace BusinessLogic
                 new Thread(o => this.Client(self)).Start();
                 //Console.WriteLine("Started TCP client on {0}:{1}", myIp.address, myIp.port);
             }
-
-
-
-
         }
 
 
