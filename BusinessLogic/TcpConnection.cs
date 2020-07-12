@@ -505,15 +505,18 @@ namespace BusinessLogic
 
         private void StartTcpClient(MyPeerData self, IP otherPeerIp, int otherPeerId)
         {
-            self.tcpClients.Add(new KeyValuePair<int, TcpClient>(otherPeerId, new TcpClient(otherPeerIp.address, otherPeerIp.port)));
+            
             if (!self.tcpClientAddresses.Any(x => x.Key == otherPeerId))
             {
+                self.tcpClients.Add(new KeyValuePair<int, TcpClient>(otherPeerId, new TcpClient(otherPeerIp.address, otherPeerIp.port)));
                 self.tcpClientAddresses.Add(new KeyValuePair<int, IP>(otherPeerId, new IP(otherPeerIp.address, otherPeerIp.port)));
+                new Thread(o => this.Client(self)).Start();
+                //Console.WriteLine("Started TCP client on {0}:{1}", myIp.address, myIp.port);
             }
 
-            new Thread(o => this.Client(self)).Start();
 
-            //Console.WriteLine("Started TCP client on {0}:{1}", myIp.address, myIp.port);
+
+
         }
 
 
