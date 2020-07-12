@@ -26,8 +26,9 @@ namespace BusinessLogic
             {
                 //Start all servers in separate threads
                 self.serverAddresses.ForEach(address => new Thread(o => this.Server(self, address.port)).Start());
+                Console.ForegroundColor = ConsoleColor.DarkGray;
                 self.serverAddresses.ForEach(address => Console.WriteLine("Started serving on {0}:{1}", "127.0.0.1", address.port));
-
+                Console.ForegroundColor = ConsoleColor.White;
                 //Servers must be running before clients may connect
                 //Thread.Sleep(1000);
 
@@ -38,7 +39,9 @@ namespace BusinessLogic
             }
             catch (Exception ex)
             {
+                Console.ForegroundColor = ConsoleColor.DarkGray;
                 Console.WriteLine(ex.Message);
+                Console.ForegroundColor = ConsoleColor.White;
             }
 
         }
@@ -46,7 +49,9 @@ namespace BusinessLogic
 
         public bool Join(MyPeerData self, IP OriginIp, IP IpToJoin)
         {
+            Console.ForegroundColor = ConsoleColor.DarkGray;
             Console.WriteLine("Join {0}", self.myPeerID);
+            Console.ForegroundColor = ConsoleColor.White;
             Message newAnswerMessage = new Message
             {
                 Type = Message.Types.JoinRequest,
@@ -89,7 +94,9 @@ namespace BusinessLogic
                 }
                 catch(Exception ex)
                 {
+                    Console.ForegroundColor = ConsoleColor.DarkGray;
                     Console.WriteLine(ex);
+                    Console.ForegroundColor = ConsoleColor.White;
                 }
                 responseData = System.Text.Encoding.ASCII.GetString(data, 0, data.Length);
 
@@ -98,17 +105,20 @@ namespace BusinessLogic
                 try
                 {
                     Message messageObj = JsonConvert.DeserializeObject<Message>(responseData.TrimEnd('-'));
-
+                    Console.ForegroundColor = ConsoleColor.DarkGray;
                     Console.WriteLine("\n");
                     Console.WriteLine("Send from : {0}",messageObj.SourceId);
                     Console.WriteLine("Send at : '{0}'", messageObj.TimeStamp);
                     Console.WriteLine("Message : '{0}'", messageObj.ChatMessage);
-                    
+                    Console.ForegroundColor = ConsoleColor.White;
+
                     ProzessNachricht(self, stream, responseData, messageObj, tcpClient);
                 }
                 catch (Exception ex)
                 {
+                    Console.ForegroundColor = ConsoleColor.DarkGray;
                     Console.WriteLine("Could not deserialize malformed message. Message was {0}. Failed with {1}", data, ex.Message);
+                    Console.ForegroundColor = ConsoleColor.White;
                     return false;
                 }
                 return true;
@@ -120,18 +130,24 @@ namespace BusinessLogic
             }
             catch (ArgumentNullException e)
             {
+                Console.ForegroundColor = ConsoleColor.DarkGray;
                 Console.WriteLine("ArgumentNullException: {0}", e);
+                Console.ForegroundColor = ConsoleColor.White;
                 return false;
             }
             catch (SocketException e)
             {
+                Console.ForegroundColor = ConsoleColor.DarkGray;
                 Console.WriteLine("Could not establish a connection to known stable peer {0}:{1}", IpToJoin.address, IpToJoin.port);
+                Console.ForegroundColor = ConsoleColor.White;
                 //Console.WriteLine("SocketException: {0}", e);
                 return false;
             }
             catch (System.IO.IOException)
             {
+                Console.ForegroundColor = ConsoleColor.DarkGray;
                 Console.WriteLine("Called Join after quit");
+                Console.ForegroundColor = ConsoleColor.White;
                 return false;
             }
         }
@@ -308,12 +324,19 @@ namespace BusinessLogic
                             try
                             {
                                 Message message = JsonConvert.DeserializeObject<Message>(data.TrimEnd('-'));
+
                                 Console.WriteLine("\n");
-                                Console.WriteLine("Send from : {0}", message.SourceId);
-                                Console.WriteLine("Send at : '{0}'", message.TimeStamp);
-                                Console.WriteLine("Message : '{0}'", message.ChatMessage);
+                                string s = String.Format("Friend {0} at {1}", message.SourceId, message.TimeStamp.ToShortTimeString());
+                                Console.CursorLeft = Console.BufferWidth - s.Length;
+                                Console.Write(s);
+
+                                s = String.Format("{0}", message.ChatMessage);
+                                Console.CursorLeft = Console.BufferWidth - s.Length;
+                                Console.Write(s);
+
                                 //Console.WriteLine(data.TrimEnd('-'));
-                                //Console.WriteLine("\n");
+                                Console.Write("\n");
+                                Console.CursorLeft = 0;
                                 ProzessNachricht(self, stream, data, message, client);
                             }
                             catch (Exception ex)
@@ -334,16 +357,19 @@ namespace BusinessLogic
             }
             catch (SocketException e)
             {
+                Console.ForegroundColor = ConsoleColor.DarkGray;
                 Console.WriteLine("SocketException: {0}", e);
                 Console.WriteLine("\nFailed to create server on port {0}", port);
+                Console.ForegroundColor = ConsoleColor.White;
             }
             finally
             {
                 // Stop listening for new clients.
                 server.Stop();
             }
-
+            Console.ForegroundColor = ConsoleColor.DarkGray;
             Console.WriteLine("\nHit enter to continue...");
+            Console.ForegroundColor = ConsoleColor.White;
             Console.Read();
         }
 
@@ -490,7 +516,9 @@ namespace BusinessLogic
 
         private void OnPeerJoinAcknowledge(MyPeerData self, Message message, NetworkStream stream, TcpClient tcpClient)
         {
+            Console.ForegroundColor = ConsoleColor.DarkGray;
             Console.WriteLine("OnPeerJoinAcknowledge {0}", self.myPeerID);
+            Console.ForegroundColor = ConsoleColor.White;
             Thread.Sleep(1000);
 
             Message messagea = new Message
@@ -580,14 +608,17 @@ namespace BusinessLogic
                 thread.Join();
                 if (value)
                 {
-                    
+                    Console.ForegroundColor = ConsoleColor.DarkGray;
                     Console.WriteLine("Succeeded - Connection to peer at {0}:{1}", stablePeer.address, stablePeer.port);
                     //self.tcpClientAddresses.Add(new IP(stablePeer.address, stablePeer.port));
                     Console.WriteLine("\n");
+                    Console.ForegroundColor = ConsoleColor.White;
                 }
                 else
                 {
+                    Console.ForegroundColor = ConsoleColor.DarkGray;
                     Console.WriteLine("Failed - Connection to peer at {0}:{1}", stablePeer.address, stablePeer.port);
+                    Console.ForegroundColor = ConsoleColor.White;
                 }
             }
             if (self.knownStablePeers.Count == 0) { value = false; }
