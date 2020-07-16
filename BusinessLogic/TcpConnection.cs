@@ -6,8 +6,6 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
-using System.Timers;
-using System.Reflection;
 using System.Text;
 
 namespace BusinessLogic
@@ -18,7 +16,6 @@ namespace BusinessLogic
         readonly IPAddress LocalAddr = IPAddress.Parse("127.0.0.1");
 
         bool go_on = true;
-        readonly Random random = new Random();
 
         public void StartServers(MyPeerData self)
         {
@@ -27,20 +24,11 @@ namespace BusinessLogic
                 //Start all servers in separate threads
                 self.serverAddresses.ForEach(address => new Thread(o => this.Server(self, address.port)).Start());
                 self.serverAddresses.ForEach(address => Console.WriteLine("Started serving on {0}:{1}", "127.0.0.1", address.port));
-
-                //Servers must be running before clients may connect
-                //Thread.Sleep(1000);
-
-                //Create all tcpClients
-                //self.tcpClientAddresses.ForEach(address => self.tcpClients.Add(new TcpClient(address.address, address.port)));
-                //Start one threads that manages the connection to all communication partners
-                //new Thread(o => this.Client(self)).Start();
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
             }
-
         }
 
 
@@ -91,7 +79,7 @@ namespace BusinessLogic
                 {
                     Console.WriteLine(ex);
                 }
-                responseData = System.Text.Encoding.ASCII.GetString(data, 0, data.Length);
+                responseData = Encoding.ASCII.GetString(data, 0, data.Length);
 
               //  Console.WriteLine("Received: {0}", responseData.TrimEnd('-'));
 
@@ -139,8 +127,6 @@ namespace BusinessLogic
 
         public void Client(MyPeerData self)
         {
-            string author = string.Empty;
-
             while (go_on)
             {
                 Thread.Sleep(300);
@@ -167,7 +153,6 @@ namespace BusinessLogic
                             Type = Message.Types.PersonalMessage,
                             ChatMessage = line,
                             SourceId = self.myPeerID
-                            //AuthorName = author
                         };
                     }
 
@@ -178,14 +163,13 @@ namespace BusinessLogic
                             Type = Message.Types.KillConnection,
                             ChatMessage = line,
                             SourceId = self.myPeerID
-                            //AuthorName = author
                         };
 
                     }
 
                     string message = FillSpace(messageObj);
 
-                    Byte[] data = System.Text.Encoding.ASCII.GetBytes(message);
+                    Byte[] data = Encoding.ASCII.GetBytes(message);
 
                     foreach (var client in self.tcpClients)
                     {
@@ -215,14 +199,11 @@ namespace BusinessLogic
                                 //responseData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
 
 
-
-
-
                                 if (line.Equals("quit"))
                                 {
                                     go_on = false;
                                     // Close everything.
-                                    System.Threading.Thread.Sleep(2000);
+                                    Thread.Sleep(2000);
                                     stream.Close();
                                     client.Value.Close();
                                     Console.WriteLine("Disconnected ");
@@ -248,7 +229,7 @@ namespace BusinessLogic
         }
 
 
-        public void Server(MyPeerData self, Int32 port)
+        public TcpListener Server(MyPeerData self, Int32 port)
         {
            // Console.WriteLine("Opened server on port {0}", port);
             TcpListener server = null;
@@ -321,12 +302,14 @@ namespace BusinessLogic
                                 Console.WriteLine("Could not deserialize malformed message. Message was {0}. Failed with {1}", data, ex.Message);
                             }
                         }
+                        ;
                     }
                     catch (Exception ex)
                     {
                         stream.Close();
                         client.Close();
                     }
+                                                      
 
                     // Shutdown and end connection
                     //client.Close();
@@ -343,6 +326,7 @@ namespace BusinessLogic
                 server.Stop();
             }
 
+            return server;
             Console.WriteLine("\nHit enter to continue...");
             Console.Read();
         }
@@ -350,38 +334,11 @@ namespace BusinessLogic
         /*Hier passiert die Logic eines Peers. Hier steht was er bei welchem Nachrichtentyp Macht etc*/
         private void ProzessNachricht(MyPeerData self, NetworkStream stream, string data, Message message, TcpClient tcpClient)
         {
-
-
-            //// Haben wir diese Nachricht schonmal gesehen
-            //if (self.seenMessages.Any(x => x.TimeStamp == message.TimeStamp && x.SourceId == message.SourceId))
-            //{
-            //    return;
-            //}
-            //else
-            //{
-            //    self.seenMessages.Add(message);
-            //    if (self.seenMessages.Count > 1500)
-            //    {
-            //        self.seenMessages.RemoveRange(0, 500);
-            //    }
-            //}
-
-
             switch (message.Type)
             {
-
                 case Message.Types.PersonalMessage:
                     //client will handle it automatically
                     break;
-                case Message.Types.GroupMessage:
-                    //TODO
-                    break;
-
-                case Message.Types.WannabeNeighbour:
-                    //TODO 
-                    break;
-
-                //Jessies Cases
                 case Message.Types.JoinRequest:
                     OnPeerJoinRequest(self, message, stream);
                     break;
@@ -514,6 +471,14 @@ namespace BusinessLogic
 
         private void OnPeerKillConnection(MyPeerData self, Message message, NetworkStream stream, TcpClient tcpClient)
         {
+            Console.WriteLine("\nOwnAddresses");
+            self.ownAdresses.ForEach(x => Console.WriteLine(x.Key + " " + x.Value.address + " " + x.Value.port));
+            Console.WriteLine("\nServerAddresses");
+            self.serverAddresses.ForEach(x => Console.WriteLine(x.address + " " + x.port));
+            Console.WriteLine("\nTcpClientAddresses");
+            self.tcpClientAddresses.ForEach(x => Console.WriteLine(x.Key + " " + x.Value.address + " " + x.Value.port));
+
+
 
             var ports = self.ownAdresses.Where(x => x.Key == message.SourceId).Select(y => y.Value.port).ToList();
 
@@ -528,6 +493,14 @@ namespace BusinessLogic
 
             stream.Close();
             tcpClient.Close();
+
+            Console.WriteLine("\nOwnAddresses");
+            self.ownAdresses.ForEach(x => Console.WriteLine(x.Key + " " + x.Value.address + " " + x.Value.port));
+            Console.WriteLine("\nServerAddresses");
+            self.serverAddresses.ForEach(x => Console.WriteLine(x.address + " " + x.port));
+            Console.WriteLine("\nTcpClientAddresses");
+            self.tcpClientAddresses.ForEach(x => Console.WriteLine(x.Key + " " + x.Value.address + " " + x.Value.port));
+
         }
 
 
@@ -596,22 +569,6 @@ namespace BusinessLogic
         }
 
 
-        #region Other Functions #region Allerlei Funktionen
-
-        private Boolean WillIBecomeANewNeighbour(MyPeerData self)
-        {
-
-            Random rand1 = new Random();
-            if (self.tcpClients.Count < 3)
-            {
-                return true;
-            }
-            else
-            {
-                return rand1.NextDouble() < (1 / self.tcpClients.Count);
-            }
-        }
-
         /// <summary>
         /// stream readers can only process streams of known length
         /// </summary>
@@ -620,8 +577,5 @@ namespace BusinessLogic
             string send = message.ToJson();
             return send.PadRight(MESSAGE_MAX_LENGTH, '-');
         }
-
-        #endregion
-
     }
 }
