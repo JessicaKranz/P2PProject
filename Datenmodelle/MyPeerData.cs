@@ -13,11 +13,11 @@ namespace Datenmodelle
         Random Random = new Random();
 
         public int myPeerID { get; } //Erzeugt Zahlenzwischen 10.000.000 und 99.999.999
-     
+
         public IPAddress myIPAddress { get; set; }    //Meine IP Addresse
 
         public IP requestAddress { get; set; }
-        public List<IP> serverAddresses { get; set; } = new List<IP>();   
+        public List<IP> serverAddresses { get; set; } = new List<IP>();
         public List<KeyValuePair<int, IP>> ownAdresses { get; set; } = new List<KeyValuePair<int, IP>>();
         public List<KeyValuePair<int, IP>> tcpClientAddresses { get; set; } = new List<KeyValuePair<int, IP>>();
 
@@ -25,6 +25,8 @@ namespace Datenmodelle
         /// Dies sind die Nachbarn
         /// </summary>
         public List<KeyValuePair<int, TcpClient>> tcpClients { get; set; } = new List<KeyValuePair<int, TcpClient>>(); //neighbours
+
+        public List<TcpListener> tcpListener {get; set;} = new List<TcpListener>();
 
         public List<IP> knownStablePeers { get; set; } = new List<IP>  
         {

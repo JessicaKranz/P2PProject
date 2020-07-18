@@ -101,7 +101,7 @@ namespace PeerToPeerCloneA
                 knownStablePeers = new List<IP>()
                 {
                     new IP("127.0.0.1", 13100),
-                    new IP("127.0.0.1", 13200),
+                    //new IP("127.0.0.1", 13200),
                 },
                 MyName = "PeerA"
             };
@@ -112,11 +112,11 @@ namespace PeerToPeerCloneA
             TcpConnection tcpConnection = new TcpConnection();         
             tcpConnection.StartServers(self);
             Thread.Sleep(1000);
-            if (self.tcpClientAddresses.Count < 2)
+            if (self.tcpClientAddresses.Count < 1)
             {
 
                 bool joinedSuccessfull = false;
-                while (self.tcpClientAddresses.Count < 2)
+                while (self.tcpClientAddresses.Count < 1)
                 {
                     joinedSuccessfull = tcpConnection.ManageJoin(self);
                     Thread.Sleep(17000);
