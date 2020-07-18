@@ -28,7 +28,7 @@ namespace BusinessLogic
                 DestinationIP = IpToJoin,
                 SourceIP = OriginIp,
                 SourceId = self.myPeerID,
-                Ttl = 2,
+                Ttl = TTL_MAX,
                 ChatMessage = "JoinInit"
             };
 
@@ -161,59 +161,67 @@ namespace BusinessLogic
 
                     Byte[] data = Encoding.ASCII.GetBytes(message);
 
-                    foreach (var client in self.tcpClients)
+                    try
                     {
-                        // Console.WriteLine("Method: {0}, client on port {1}", "Client", client.Client.RemoteEndPoint.ToString());
-                        try
+                        foreach (var client in self.tcpClients)
                         {
-                            //if (!client.Value.Connected)
-                            //{
-                            //    var c = client.Value.Client;
-                            //    c.ConnectAsync(LocalAddr, ((IPEndPoint)c.RemoteEndPoint).Port);
-                            //}
-
-                            NetworkStream stream = client.Value.GetStream();
-
+                            // Console.WriteLine("Method: {0}, client on port {1}", "Client", client.Client.RemoteEndPoint.ToString());
                             try
                             {
-                                // Send the message to the connected TcpServer.
-                                stream.Write(data, 0, data.Length);
+                                //if (!client.Value.Connected)
+                                //{
+                                //    var c = client.Value.Client;
+                                //    c.ConnectAsync(LocalAddr, ((IPEndPoint)c.RemoteEndPoint).Port);
+                                //}
 
-                                // Receive the TcpServer.response.
+                                NetworkStream stream = client.Value.GetStream();
 
-                                // String to store the response ASCII representation.
-                                String responseData = String.Empty;
-
-                                //// Read the first batch of the TcpServer response bytes.
-                                //Int32 bytes = stream.Read(data, 0, data.Length);
-                                //responseData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
-
-
-                                if (line.Equals("quit"))
+                                try
                                 {
-                                    go_on = false;
-                                    // Close everything.
-                                    Thread.Sleep(2000);
-                                    stream.Close();
-                                    client.Value.Close();
-                                    Console.WriteLine("Disconnected ");
-                                }
+                                    // Send the message to the connected TcpServer.
+                                    stream.Write(data, 0, data.Length);
 
+                                    // Receive the TcpServer.response.
+
+                                    // String to store the response ASCII representation.
+                                    String responseData = String.Empty;
+
+                                    //// Read the first batch of the TcpServer response bytes.
+                                    //Int32 bytes = stream.Read(data, 0, data.Length);
+                                    //responseData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
+
+
+                                    if (line.Equals("quit"))
+                                    {
+                                        go_on = false;
+                                        // Close everything.
+                                        Thread.Sleep(2000);
+                                        stream.Close();
+                                        client.Value.Close();
+                                        Console.WriteLine("Disconnected ");
+                                    }
+
+                                }
+                                catch (Exception ex)
+                                {
+                                    self.tcpClients.Remove(client);
+                                }
                             }
-                            catch (Exception ex)
+                            catch (ArgumentNullException e)
                             {
-                                self.tcpClients.Remove(client);
+                                Console.WriteLine("ArgumentNullException: {0}", e);
+                            }
+                            catch (SocketException e)
+                            {
+                                Console.WriteLine("SocketException: {0}", e);
                             }
                         }
-                        catch (ArgumentNullException e)
-                        {
-                            Console.WriteLine("ArgumentNullException: {0}", e);
-                        }
-                        catch (SocketException e)
-                        {
-                            Console.WriteLine("SocketException: {0}", e);
-                        }
+                    }catch(Exception ex)
+                    {
+                        Console.WriteLine("Lost peer");
                     }
+
+                    
                 }
             }
         }
@@ -378,30 +386,19 @@ namespace BusinessLogic
                     ChatMessage = "JoinRequest",
                     SourceId = self.myPeerID,
                     DestinationId = incommingMessage.SourceId
-                };
+                };            
 
-                if(incommingMessage.Ttl == 0)
-                {
-                    Message answerSwitchedAddresses = new Message
-                    {
-                        Type = answer.Type,
-                        DestinationIP = answer.SourceIP,
-                        SourceIP = answer.DestinationIP,
-                        ChatMessage = answer.ChatMessage,
-                        SourceId = answer.DestinationId,
-                        DestinationId = answer.SourceId
-                    };
-
-                    answer = answerSwitchedAddresses;
-                }
-
-                if(self.tcpClientAddresses.Count > 0 && self.tcpClients.Any(x => x.Key == answer.DestinationId))
+                if(incommingMessage.Ttl == 0 && !self.tcpClientAddresses.Any(x => x.Key == answer.DestinationId))
+                    new Thread(o => StartTcpClient(self, new IP(LocalAddr.ToString(), incommingMessage.SourceIP.port), incommingMessage.SourceId)).Start();
+                 
+                if (self.tcpClientAddresses.Count > 0 && self.tcpClients.Any(x => x.Key == answer.DestinationId))
                 {
                     TcpClient tcpClient = self.tcpClients.Where(x => x.Key == answer.DestinationId).FirstOrDefault().Value;
                     stream = tcpClient.GetStream();
                 }
                 incommingMessage.Ttl--;
-                
+
+
             }
             else
             {
@@ -415,7 +412,7 @@ namespace BusinessLogic
                         var s = incommingMessage.SourceIP.port;
                         int f = (int)Math.Floor(s / 100d) * 100;
                         StartTcpClient(self, new IP(LocalAddr.ToString(), f), incommingMessage.SourceId);
-                        self.tcpClientAddresses.Add(new KeyValuePair<int, IP>(incommingMessage.SourceId, new IP(incommingMessage.SourceIP.address, incommingMessage.SourceIP.port)));
+                        //self.tcpClientAddresses.Add(new KeyValuePair<int, IP>(incommingMessage.SourceId, new IP(incommingMessage.SourceIP.address, incommingMessage.SourceIP.port)));
                     }
                     incommingMessage.Ttl--;
                     //todo doesn't work for greater ttl's
@@ -425,11 +422,6 @@ namespace BusinessLogic
                     var i = nextRandomWalkStep.Value.port;
                     int o = (int)Math.Floor(i / 100d) * 100;
                     incommingMessage.DestinationIP = new IP(LocalAddr.ToString(), o);
-
-                    //create new message and send it instead of calling OnPeerJoinRequest recursively
-                    //sending a msg is needed because otherwise, self var is not updated
-                    //OnPeerJoinRequest(self, incommingMessage, stream);
-
 
                     
                     answer = incommingMessage;
@@ -452,22 +444,13 @@ namespace BusinessLogic
                     {
                         Console.WriteLine("Broke up while adding new peer to network");
                         Console.WriteLine(ex.Message);
-                    }
-                    
-
+                    }                   
                 }
             }
 
 
-            //if(incommingMessage.Ttl == 0)
-            //{
-            //    StartServer(self, incommingMessage.DestinationIP, answer.DestinationId);
-            //}
-            //else
-            //{
-            if (self.tcpClientAddresses.Count == 0 || incommingMessage.Ttl < 0)
+            if (self.tcpClientAddresses.Count == 0 || incommingMessage.Ttl < 0) 
                 StartServer(self, answer.SourceIP, answer.DestinationId);
-            //}
 
             string send = FillSpace(answer);
 
@@ -475,11 +458,8 @@ namespace BusinessLogic
 
             stream.Write(sendableMessage, 0, sendableMessage.Length);
             string data = System.Text.Encoding.ASCII.GetString(sendableMessage, 0, sendableMessage.Length);
-
-            // Console.WriteLine("Sent: {0}", data.TrimEnd('-'));
-
-
         }
+
 
         private void OnPeerJoinResponse(MyPeerData self, Message message, NetworkStream stream, TcpClient tcpClient)
         {
@@ -506,6 +486,7 @@ namespace BusinessLogic
             Byte[] sendableMessage = System.Text.Encoding.ASCII.GetBytes(send);
 
             // Send back a response.
+            stream = self.tcpClients.Where(x => x.Key == message.SourceId).FirstOrDefault().Value.GetStream();
             stream.Write(sendableMessage, 0, sendableMessage.Length);
             string data = System.Text.Encoding.ASCII.GetString(sendableMessage, 0, sendableMessage.Length);
 
@@ -516,7 +497,7 @@ namespace BusinessLogic
             tcpClient.GetStream().Close();
             tcpClient.Client.Close();
             tcpClient.Close();
-            stream.Dispose();
+            //stream.Dispose();
             tcpClient.Dispose();
             Thread.Sleep(1000);
 
@@ -633,13 +614,55 @@ namespace BusinessLogic
 
         private void StartTcpClient(MyPeerData self, IP otherPeerIp, int otherPeerId)
         {
-            if (!self.tcpClientAddresses.Any(x => x.Key == otherPeerId))
+            //delete bootstrapping client if new client enters
+            //var i = otherPeerIp.port;
+            //int o = (int)Math.Floor(i / 100d) * 100;
+
+            //bool deletePeer = false;
+
+            //KeyValuePair<int, TcpClient> bootstrappingClient = new KeyValuePair<int, TcpClient>();
+
+            //if(self.tcpClientAddresses.Any(x => x.Key == otherPeerId))
+            //{
+            //    bootstrappingClient = self.tcpClients.Where(x => x.Key == otherPeerId).FirstOrDefault();
+            //    if(((IPEndPoint)bootstrappingClient.Value.Client.RemoteEndPoint).Port == o)
+            //    {
+
+
+            //        deletePeer = true;
+            //    }
+
+            //}
+
+            //if (deletePeer)
+            //{
+            //    self.tcpClientAddresses.RemoveAll(x => x.Key == otherPeerId && x.Value.port == o);
+            //    self.tcpClients.RemoveAll(x => x.Key == otherPeerId && ((IPEndPoint)x.Value.Client.RemoteEndPoint).Port == 0);
+            //    bootstrappingClient.Value.Client.Close();
+            //    bootstrappingClient.Value.Client.Dispose();
+            //    deletePeer = false;
+            //}
+
+
+            //if (!self.tcpClientAddresses.Any(x => x.Key == otherPeerId))
+            //{
+            //Thread.Sleep(5000);
+            TcpClient tcpClient = new TcpClient(otherPeerIp.address, otherPeerIp.port);
+            try
             {
-                self.tcpClients.Add(new KeyValuePair<int, TcpClient>(otherPeerId, new TcpClient(otherPeerIp.address, otherPeerIp.port)));
+                tcpClient.ConnectAsync(LocalAddr, otherPeerIp.port);
+
+            }catch(Exception)
+            {
+                Console.WriteLine("Doppelter Verbindungsaufbau");
+            }
+
+
+                self.tcpClients.Add(new KeyValuePair<int, TcpClient>(otherPeerId, tcpClient));
                 self.tcpClientAddresses.Add(new KeyValuePair<int, IP>(otherPeerId, new IP(otherPeerIp.address, otherPeerIp.port)));
                 new Thread(o => this.Client(self)).Start();
                 //Console.WriteLine("Started TCP client on {0}:{1}", myIp.address, myIp.port);
-            }
+            //}
         }
 
 
