@@ -32,6 +32,10 @@ namespace Datenmodelle
         /// <summary>
         /// If we ever check weather or not we will send a message back to the Peer we got a message from . This is the Attribute to compare with
         /// </summary>
+        public int JoiningId { get; set; }
+        /// <summary>
+        /// senders ID
+        /// </summary>
         public string ChatMessage { get; set; }
         /// <summary>
         /// TimeStamp of when the Message was Sent

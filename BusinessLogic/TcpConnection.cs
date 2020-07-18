@@ -16,7 +16,7 @@ namespace BusinessLogic
         readonly IPAddress LocalAddr = IPAddress.Parse("127.0.0.1");
         Random random = new Random();
         bool go_on = true;
-        const int TTL_MAX = 2;
+        const int TTL_MAX = 1;
 
        
         public bool Join(MyPeerData self, IP OriginIp, IP IpToJoin)
@@ -29,8 +29,19 @@ namespace BusinessLogic
                 SourceIP = OriginIp,
                 SourceId = self.myPeerID,
                 Ttl = TTL_MAX,
-                ChatMessage = "JoinInit"
+                ChatMessage = "JoinInit",
+                JoiningId = self.myPeerID
             };
+
+            try
+            {
+                StartServer(self, OriginIp, 0);
+            }
+            catch (SocketException)
+            {
+                Console.WriteLine("Server already running");
+            }
+            
 
             string message = FillSpace(newAnswerMessage);
 
@@ -38,9 +49,7 @@ namespace BusinessLogic
 
             try
             {
-                Console.WriteLine("a");
                 TcpClient tcpClient = new TcpClient(newAnswerMessage.DestinationIP.address, newAnswerMessage.DestinationIP.port);
-                Console.WriteLine("a");
 
                 //Console.WriteLine("Method: {0}, new TcpClient {1}:{2}", "Join", newAnswerMessage.DestinationIP.address, newAnswerMessage.DestinationIP.port);
 
@@ -142,7 +151,8 @@ namespace BusinessLogic
                         {
                             Type = Message.Types.PersonalMessage,
                             ChatMessage = line,
-                            SourceId = self.myPeerID
+                            SourceId = self.myPeerID,
+                            JoiningId = self.myPeerID
                         };
                     }
 
@@ -152,7 +162,8 @@ namespace BusinessLogic
                         {
                             Type = Message.Types.KillConnection,
                             ChatMessage = line,
-                            SourceId = self.myPeerID
+                            SourceId = self.myPeerID,
+                            JoiningId = self.myPeerID
                         };
 
                     }
@@ -385,11 +396,17 @@ namespace BusinessLogic
                     SourceIP = self.GetNextFreePort(),
                     ChatMessage = "JoinRequest",
                     SourceId = self.myPeerID,
-                    DestinationId = incommingMessage.SourceId
+                    DestinationId = incommingMessage.SourceId,
+                    JoiningId = incommingMessage.JoiningId
                 };            
 
                 if(incommingMessage.Ttl == 0 && !self.tcpClientAddresses.Any(x => x.Key == answer.DestinationId))
-                    new Thread(o => StartTcpClient(self, new IP(LocalAddr.ToString(), incommingMessage.SourceIP.port), incommingMessage.SourceId)).Start();
+                {
+                    Thread createClient = new Thread(o => StartTcpClient(self, new IP(LocalAddr.ToString(), incommingMessage.SourceIP.port), incommingMessage.SourceId));
+                    createClient.Start();
+                    createClient.Join();
+                }
+                    
                  
                 if (self.tcpClientAddresses.Count > 0 && self.tcpClients.Any(x => x.Key == answer.DestinationId))
                 {
@@ -417,7 +434,7 @@ namespace BusinessLogic
                     incommingMessage.Ttl--;
                     //todo doesn't work for greater ttl's
                     //must use variable like joiningId
-                    var listOfPeersWithoutJoiningPeer = self.tcpClientAddresses.Where(x => x.Key != incommingMessage.SourceId).ToList();
+                    var listOfPeersWithoutJoiningPeer = self.tcpClientAddresses.Where(x => x.Key != incommingMessage.JoiningId).ToList();
                     var nextRandomWalkStep = listOfPeersWithoutJoiningPeer.ElementAt(random.Next(listOfPeersWithoutJoiningPeer.Count));
                     var i = nextRandomWalkStep.Value.port;
                     int o = (int)Math.Floor(i / 100d) * 100;
@@ -466,7 +483,14 @@ namespace BusinessLogic
 
             //Console.WriteLine("OnPeerJoinResponse {0}", self.myPeerID);
 
-            StartServer(self, message.DestinationIP, message.SourceId);
+            try
+            {
+                StartServer(self, message.DestinationIP, message.SourceId);
+            }
+            catch (SocketException)
+            {
+                Console.WriteLine("Server already running");
+            }
 
             Thread.Sleep(1000);
 
@@ -478,7 +502,8 @@ namespace BusinessLogic
                 DestinationIP = message.SourceIP,
                 SourceIP = message.DestinationIP,
                 ChatMessage = "JoinResponse",
-                SourceId = self.myPeerID
+                SourceId = self.myPeerID,
+                JoiningId = message.JoiningId
             };
 
             string send = FillSpace(newAnswerMessage);
@@ -614,39 +639,7 @@ namespace BusinessLogic
 
         private void StartTcpClient(MyPeerData self, IP otherPeerIp, int otherPeerId)
         {
-            //delete bootstrapping client if new client enters
-            //var i = otherPeerIp.port;
-            //int o = (int)Math.Floor(i / 100d) * 100;
-
-            //bool deletePeer = false;
-
-            //KeyValuePair<int, TcpClient> bootstrappingClient = new KeyValuePair<int, TcpClient>();
-
-            //if(self.tcpClientAddresses.Any(x => x.Key == otherPeerId))
-            //{
-            //    bootstrappingClient = self.tcpClients.Where(x => x.Key == otherPeerId).FirstOrDefault();
-            //    if(((IPEndPoint)bootstrappingClient.Value.Client.RemoteEndPoint).Port == o)
-            //    {
-
-
-            //        deletePeer = true;
-            //    }
-
-            //}
-
-            //if (deletePeer)
-            //{
-            //    self.tcpClientAddresses.RemoveAll(x => x.Key == otherPeerId && x.Value.port == o);
-            //    self.tcpClients.RemoveAll(x => x.Key == otherPeerId && ((IPEndPoint)x.Value.Client.RemoteEndPoint).Port == 0);
-            //    bootstrappingClient.Value.Client.Close();
-            //    bootstrappingClient.Value.Client.Dispose();
-            //    deletePeer = false;
-            //}
-
-
-            //if (!self.tcpClientAddresses.Any(x => x.Key == otherPeerId))
-            //{
-            //Thread.Sleep(5000);
+            
             TcpClient tcpClient = new TcpClient(otherPeerIp.address, otherPeerIp.port);
             try
             {
