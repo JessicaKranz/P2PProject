@@ -14,7 +14,7 @@ namespace BusinessLogic
     {
         const int MESSAGE_MAX_LENGTH = 512;
         readonly IPAddress LocalAddr = IPAddress.Parse("127.0.0.1");
-        Random random = new Random();
+        readonly Random random = new Random();
         bool go_on = true;
         const int TTL_MAX = 1;
 
@@ -51,13 +51,6 @@ namespace BusinessLogic
             {
                 TcpClient tcpClient = new TcpClient(newAnswerMessage.DestinationIP.address, newAnswerMessage.DestinationIP.port);
 
-                //Console.WriteLine("Method: {0}, new TcpClient {1}:{2}", "Join", newAnswerMessage.DestinationIP.address, newAnswerMessage.DestinationIP.port);
-
-                //if (!tcpClient.Connected)
-                //{
-                //    var c = tcpClient.Client;
-                //    tcpClient.ConnectAsync(LocalAddr, ((IPEndPoint)c.RemoteEndPoint).Port);
-                //}
 
                 NetworkStream stream = tcpClient.GetStream();
 
@@ -80,7 +73,6 @@ namespace BusinessLogic
                 }
                 responseData = Encoding.ASCII.GetString(data, 0, data.Length);
 
-                //  Console.WriteLine("Received: {0}", responseData.TrimEnd('-'));
 
                 try
                 {
@@ -100,20 +92,15 @@ namespace BusinessLogic
                 }
                 return true;
 
-                // Close everything.
-                //stream.Close();
-                //tcpClient.Close();
-                //Console.WriteLine("Disconnected");
             }
             catch (ArgumentNullException e)
             {
                 Console.WriteLine("ArgumentNullException: {0}", e);
                 return false;
             }
-            catch (SocketException e)
+            catch (SocketException)
             {
                 Console.WriteLine("Could not establish a connection to known stable peer {0}:{1}", IpToJoin.address, IpToJoin.port);
-                //Console.WriteLine("SocketException: {0}", e);
                 return false;
             }
             catch (System.IO.IOException)
@@ -128,17 +115,7 @@ namespace BusinessLogic
         {
             while (go_on)
             {
-                Thread.Sleep(300);
-                /* if (self.Authorgiven == false)
-                 {
-                     Console.WriteLine("Give yourself a Name : ");
-
-
-                     author = Console.ReadLine();
-                     self.Authorgiven = true;
-                 }
-                */
-                // Console.WriteLine("Enter your Message: ");
+                Thread.Sleep(300);                
                 string line = Console.ReadLine();
 
 
@@ -181,12 +158,7 @@ namespace BusinessLogic
                             // Console.WriteLine("Method: {0}, client on port {1}", "Client", client.Client.RemoteEndPoint.ToString());
                             try
                             {
-                                //if (!client.Value.Connected)
-                                //{
-                                //    var c = client.Value.Client;
-                                //    c.ConnectAsync(LocalAddr, ((IPEndPoint)c.RemoteEndPoint).Port);
-                                //}
-
+                                
                                 NetworkStream stream = client.Value.GetStream();
 
                                 try
@@ -198,11 +170,7 @@ namespace BusinessLogic
 
                                     // String to store the response ASCII representation.
                                     String responseData = String.Empty;
-
-                                    //// Read the first batch of the TcpServer response bytes.
-                                    //Int32 bytes = stream.Read(data, 0, data.Length);
-                                    //responseData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
-
+                                 
 
                                     if (line.Equals("quit"))
                                     {
@@ -215,7 +183,7 @@ namespace BusinessLogic
                                     }
 
                                 }
-                                catch (Exception ex)
+                                catch (Exception)
                                 {
                                     self.tcpClients.Remove(client);
                                 }
@@ -229,7 +197,7 @@ namespace BusinessLogic
                                 Console.WriteLine("SocketException: {0}", e);
                             }
                         }
-                    }catch(Exception ex)
+                    }catch(Exception)
                     {
                         Console.WriteLine("Lost peer");
                     }
@@ -242,13 +210,14 @@ namespace BusinessLogic
 
         public void Server(MyPeerData self, Int32 port)
         {
-            // Console.WriteLine("Opened server on port {0}", port);
-            TcpListener server = null;
             try
             {
+                // Console.WriteLine("Opened server on port {0}", port);
                 // TcpListener server = new TcpListener(port);
-                server = new TcpListener(LocalAddr, port);
-                server.ExclusiveAddressUse = false;
+                TcpListener server = new TcpListener(LocalAddr, port)
+                {
+                    ExclusiveAddressUse = false
+                };
 
                 // Start listening for client requests.
                 server.Start();
@@ -264,18 +233,9 @@ namespace BusinessLogic
                 // Enter the listening loop.
                 while (true)
                 {
-
-                    //  Thread.Sleep(1000);
-
-                    //   Console.WriteLine("Waiting for a connection...");
-                    // Console.WriteLine("\n");
-
                     // Perform a blocking call to accept requests.
                     // You could also use server.AcceptSocket() here.                
                     TcpClient client = server.AcceptTcpClient();
-                    // Console.WriteLine("Connected!"); 
-                    // Console.WriteLine("\n");
-
 
                     data = null;
 
@@ -454,12 +414,9 @@ namespace BusinessLogic
                     {
                         var s = incommingMessage.SourceIP.port;
                         int f = (int)Math.Floor(s / 100d) * 100;
-                        StartTcpClient(self, new IP(LocalAddr.ToString(), f), incommingMessage.SourceId);
-                        //self.tcpClientAddresses.Add(new KeyValuePair<int, IP>(incommingMessage.SourceId, new IP(incommingMessage.SourceIP.address, incommingMessage.SourceIP.port)));
+                        StartTcpClient(self, new IP(LocalAddr.ToString(), f), incommingMessage.SourceId);                        
                     }
                     incommingMessage.Ttl--;
-                    //todo doesn't work for greater ttl's
-                    //must use variable like joiningId
                     var listOfPeersWithoutJoiningPeer = self.tcpClientAddresses.Where(x => x.Key != incommingMessage.JoiningId).ToList();
                     var nextRandomWalkStep = listOfPeersWithoutJoiningPeer.ElementAt(random.Next(listOfPeersWithoutJoiningPeer.Count));
                     var i = nextRandomWalkStep.Value.port;
@@ -539,7 +496,7 @@ namespace BusinessLogic
             // Send back a response.
             stream = self.tcpClients.Where(x => x.Key == message.SourceId).FirstOrDefault().Value.GetStream();
             stream.Write(sendableMessage, 0, sendableMessage.Length);
-            string data = System.Text.Encoding.ASCII.GetString(sendableMessage, 0, sendableMessage.Length);
+            string data = Encoding.ASCII.GetString(sendableMessage, 0, sendableMessage.Length);
 
             //  Console.WriteLine("Acknowledge: {0}", data.TrimEnd('-'));
 
@@ -548,20 +505,8 @@ namespace BusinessLogic
             tcpClient.GetStream().Close();
             tcpClient.Client.Close();
             tcpClient.Close();
-            //stream.Dispose();
             tcpClient.Dispose();
             Thread.Sleep(1000);
-
-
-
-            //var p = self.tcpListener.Where(x => ((IPEndPoint)x.LocalEndpoint).Port == self.requestAddress.port).ToList();
-            //p.FirstOrDefault().Stop();
-            //Thread.Sleep(1000);
-            //p.FirstOrDefault().Start();
-
-
-            //StartServer(self, self.requestAddress, 0);
-            //Thread.Sleep(1000);
 
         }
 
@@ -586,23 +531,7 @@ namespace BusinessLogic
             //self.ownAdresses.Add(new KeyValuePair<int, IP>(message.SourceId, message.DestinationIP));
             StartTcpClient(self, message.SourceIP, message.SourceId);
 
-            //tcpClient.GetStream().Close();
-            //tcpClient.Client.Close();
-            //tcpClient.Close();
-            //stream.Dispose();
-            //tcpClient.Dispose();
-
-
             Thread.Sleep(1000);
-            //var p = self.tcpListener.Where(x => ((IPEndPoint)x.LocalEndpoint).Port == self.requestAddress.port).ToList();
-            //p.FirstOrDefault().Server.Close();
-            //p.FirstOrDefault().Stop();
-            //Thread.Sleep(1000);
-            ////p.FirstOrDefault().Start();
-            //StartServer(self, self.requestAddress, 0);
-            //Thread.Sleep(1000);
-
-
         }
 
         private void OnPeerKillConnection(MyPeerData self, Message message, NetworkStream stream, TcpClient tcpClient)
@@ -613,7 +542,6 @@ namespace BusinessLogic
             self.serverAddresses.ForEach(x => Console.WriteLine(x.address + " " + x.port));
             Console.WriteLine("\nTcpClientAddresses");
             self.tcpClientAddresses.ForEach(x => Console.WriteLine(x.Key + " " + x.Value.address + " " + x.Value.port));
-
 
 
             var ports = self.ownAdresses.Where(x => x.Key == message.SourceId).Select(y => y.Value.port).ToList();
@@ -680,28 +608,14 @@ namespace BusinessLogic
                 self.tcpClients.Add(new KeyValuePair<int, TcpClient>(otherPeerId, tcpClient));
                 self.tcpClientAddresses.Add(new KeyValuePair<int, IP>(otherPeerId, new IP(otherPeerIp.address, otherPeerIp.port)));
                 new Thread(o => this.Client(self)).Start();
-                //Console.WriteLine("Started TCP client on {0}:{1}", myIp.address, myIp.port);
-            //}
+
         }
 
 
         public bool ManageJoin(MyPeerData self)
         {
             Random random = new Random();
-            //overlay mode
-            //var selectedStablePeer = self.knownStablePeers.ElementAt(random.Next(self.knownStablePeers.Count));
 
-            //bool value = false; // Used to store the return value
-            //var thread = new Thread(() =>
-            //{
-            //    value = Join(self, self.GetNextFreePort(), selectedStablePeer);
-            //});
-            //thread.Start();
-            //thread.Join();
-            //Console.WriteLine(value);
-            //return value;
-
-            //groupchat mode
             bool value = true; // Used to store the return value
             foreach (var stablePeer in self.knownStablePeers)
             {
@@ -713,9 +627,7 @@ namespace BusinessLogic
                 thread.Join();
                 if (value)
                 {
-
                     Console.WriteLine("Succeeded - Connection to peer at {0}:{1}", stablePeer.address, stablePeer.port);
-                    //self.tcpClientAddresses.Add(new IP(stablePeer.address, stablePeer.port));
                     Console.WriteLine("\n");
                 }
                 else
