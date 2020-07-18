@@ -152,7 +152,8 @@ namespace BusinessLogic
                             Type = Message.Types.PersonalMessage,
                             ChatMessage = line,
                             SourceId = self.myPeerID,
-                            JoiningId = self.myPeerID
+                            JoiningId = self.myPeerID,
+                            Ttl = 1
                         };
                     }
 
@@ -163,7 +164,8 @@ namespace BusinessLogic
                             Type = Message.Types.KillConnection,
                             ChatMessage = line,
                             SourceId = self.myPeerID,
-                            JoiningId = self.myPeerID
+                            JoiningId = self.myPeerID,
+                            Ttl = 1
                         };
 
                     }
@@ -351,7 +353,7 @@ namespace BusinessLogic
             switch (message.Type)
             {
                 case Message.Types.PersonalMessage:
-                    //client will handle it automatically
+                    OnPersonalMessage(self, message, stream);
                     break;
                 case Message.Types.JoinRequest:
                     OnPeerJoinRequest(self, message, stream);
@@ -369,6 +371,30 @@ namespace BusinessLogic
                     Console.WriteLine("Could not handle message of unknown type {0}. Message was {1}", message.Type, message.ToJson());
                     break;
             }
+        }
+
+        public void OnPersonalMessage(MyPeerData self, Message incommingMessage, NetworkStream stream)
+        {
+            //broadcast message to all contacts that were not the original sender
+            if(incommingMessage.Ttl > 0)
+            {
+                Message answer = incommingMessage;
+                answer.Ttl--;
+                var peersToSendMessageTo = self.tcpClients.Where(x => x.Key != incommingMessage.JoiningId).ToList();
+
+                foreach (var peer in peersToSendMessageTo)
+                {
+
+                    stream = peer.Value.GetStream();
+
+                    string send = FillSpace(answer);
+
+                    Byte[] sendableMessage = System.Text.Encoding.ASCII.GetBytes(send);
+
+                    stream.Write(sendableMessage, 0, sendableMessage.Length);
+                    string data = System.Text.Encoding.ASCII.GetString(sendableMessage, 0, sendableMessage.Length);
+                }            
+            }                      
         }
 
 
