@@ -282,8 +282,8 @@ namespace BusinessLogic
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine(ex);
-                        //return;
+                        //verbose mode
+                        //Console.WriteLine(ex);
                     }
 
 
@@ -293,8 +293,9 @@ namespace BusinessLogic
             }
             catch (SocketException e)
             {
-                Console.WriteLine("SocketException: {0}", e);
-                Console.WriteLine("\nFailed to create server on port {0}", port);
+                Console.WriteLine("Doppelter Verbindungsaufbau");
+                //Console.WriteLine("SocketException: {0}", e);
+                //Console.WriteLine("\nFailed to create server on port {0}", port);
             }
             finally
             {
